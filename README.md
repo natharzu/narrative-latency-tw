@@ -87,5 +87,5 @@ cd narrative-latency-tw
 pip install -r requirements.txt
 jupyter notebook notebooks/01_clean.ipynb
 
-```bash
+```
 
