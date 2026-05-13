@@ -23,11 +23,13 @@ Secondary questions:
 
 ## 3. Data sources
 
-| Source | Use | Access |
-|---|---|---|
-| **IORG** (Information Operations Research Group) — 84-narrative dataset, 2021–2023 | Stage-tagged narratives with timestamps and topic labels | Public release, CSV/JSON |
-| **Doublethink Lab** — election-period analyses (2020, 2024) | Cross-reference of narrative onset and election proximity | Published reports |
-| **Cofacts** (open fact-check database) | Optional: domestic spread signal, message-level timestamps | Public API |
+| Source | Use | Access | License |
+|---|---|---|---|
+| **IORG** (Information Operations Research Group) — 84-narrative dataset, 2021–2023 | Stage-tagged narratives with timestamps and topic labels | [iorg.tw/open](https://iorg.tw/open) · [methodology](https://iorg.tw/open/rm) | CC BY-SA 4.0 |
+| **Doublethink Lab** — election-period analyses (2020, 2024) | Cross-reference of narrative onset and election proximity | [China-Index-raw-data](https://github.com/doublethinklab/China-Index-raw-data) · [Artificial Multiverse report](https://medium.com/doublethinklab/artificial-multiverse-foreign-information-manipulation-and-interference-in-taiwans-2024-national-f3e22ac95fe7) | Open, attribution |
+| **Cofacts** open fact-check database | Optional: domestic spread signal, message-level timestamps | [cofacts.tw](https://cofacts.tw) · [GraphQL API](https://api.cofacts.tw/) | CC BY-SA |
+
+Per-file retrieval notes: [`data/raw/SOURCES.md`](./data/raw/SOURCES.md).
 
 All sources are openly licensed and already cleaned at the narrative-record level, so iteration time goes toward analysis and story, not parsing.
 
