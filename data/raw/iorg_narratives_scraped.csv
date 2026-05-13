@@ -1,0 +1,18 @@
+narrative_id,case_id,case_name,narrative_text,topic_cluster,time_frame_start,time_frame_end,stage_1_date,stage_2_date,stage_3_date,stage_4_date,election_window,source_url,retrieved_at
+B.11,B.1,Kansai Airport,"Chinese embassy sends buses to evacuate passengers, Chinese get on buses first",ccp_information_manipulation,2018.9,2018.9,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.12,B.1,Kansai Airport,Taiwanese can get on buses too if self-identify as Chinese,ccp_information_manipulation,2018.9,2018.9,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.21,B.2,Chen Chu is corrupt,Kaohsiung Mayor Chen Chu is corrupt,ccp_information_manipulation,2019.4,2019.12,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.22,B.2,Chen Chu is corrupt,"Feeling unbearable, an MJIB official leaked that Kaohsiung Mayor Chen Chu is corrupt",ccp_information_manipulation,2019.4,2019.12,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.31,B.3,American influenza is deadlier than COVID-19,"American influenza, causing 6,600 deaths, is deadlier than COVID-19",ccp_information_manipulation,2020.1,2020.4,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.32,B.3,American influenza is deadlier than COVID-19,American influenza is deadlier than COVID-19 and ignored by news media,ccp_information_manipulation,2020.1,2020.4,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.41,B.4,US spreads coronavirus at Wuhan Military World Games,US brought coronavirus to China through Wuhan Military World Games,ccp_information_manipulation,2020.1,2020.6,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.42,B.4,US spreads coronavirus at Wuhan Military World Games,Coronavirus is a US-made bio weapon,ccp_information_manipulation,2020.1,2020.6,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.43,B.4,US spreads coronavirus at Wuhan Military World Games,Coronavirus was leaked from a US lab,ccp_information_manipulation,2020.1,2020.6,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.51,B.5,American influenza is COVID-19,Asahi Shimbun: COVID-19 outbreaks in the US long before Wuhan?,ccp_information_manipulation,2020.2,2020.5,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.52,B.5,American influenza is COVID-19,Pan Hwai-Tzong: US is source of coronavirus?,ccp_information_manipulation,2020.2,2020.5,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.53,B.5,American influenza is COVID-19,Zhao Li-Jian: US CDC chief admits flu patients may have had COVID-19,ccp_information_manipulation,2020.2,2020.5,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.54,B.5,American influenza is COVID-19,Belleville Mayor contracted COVID-19 in November 2019,ccp_information_manipulation,2020.2,2020.5,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.61,B.6,Liberate America,Liberate America,ccp_information_manipulation,2020.5,2020.6,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.71,B.7,Central Election Commission vote tampering,CEC stuffed votes with blank ballots,ccp_information_manipulation,2019.6,2020.8,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.72,B.7,Central Election Commission vote tampering,CEC used waxed ballots to cause invalid votes,ccp_information_manipulation,2019.6,2020.8,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.73,B.7,Central Election Commission vote tampering,CEC altered vote count with computer systems,ccp_information_manipulation,2019.6,2020.8,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
