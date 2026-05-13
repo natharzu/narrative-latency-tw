@@ -80,8 +80,12 @@ The single number on slide 1; the diverging bar on slide 2; the recommendation o
 
 ## 10. Reproducibility
 
+```bash
+
 git clone https://github.com/natharzu/narrative-latency-tw.git
 cd narrative-latency-tw
 pip install -r requirements.txt
 jupyter notebook notebooks/01_clean.ipynb
+
+```bash
 
