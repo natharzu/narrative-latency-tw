@@ -25,7 +25,7 @@ Secondary questions:
 
 | Source | Use | Access | License |
 |---|---|---|---|
-| **IORG** (Information Operations Research Group) — 84-narrative dataset, 2021–2023 | Stage-tagged narratives with timestamps and topic labels | [iorg.tw/open](https://iorg.tw/open) · [methodology](https://iorg.tw/open/rm) | CC BY-SA 4.0 |
+| **IORG** (Information Operations Research Group) — 45 narratives across 4 topic clusters (CCP info manipulation, US-skepticism, vaccine, pre-election), retrieved 2026-05-13 | Stage-tagged narratives with timestamps and topic labels | [iorg.tw/open](https://iorg.tw/open) · [methodology](https://iorg.tw/open/rm) | CC BY-SA 4.0 |
 | **Doublethink Lab** — election-period analyses (2020, 2024) | Cross-reference of narrative onset and election proximity | [China-Index-raw-data](https://github.com/doublethinklab/China-Index-raw-data) · [Artificial Multiverse report](https://medium.com/doublethinklab/artificial-multiverse-foreign-information-manipulation-and-interference-in-taiwans-2024-national-f3e22ac95fe7) | Open, attribution |
 | **Cofacts** open fact-check database | Optional: domestic spread signal, message-level timestamps | [cofacts.tw](https://cofacts.tw) · [GraphQL API](https://api.cofacts.tw/) | CC BY-SA |
 
@@ -75,7 +75,7 @@ The single number on slide 1; the diverging bar on slide 2; the recommendation o
 ## 9. Limitations
 
 - IORG's stage tagging reflects observed appearance, not necessarily true origin — latency is a lower bound.
-- 84 narratives is small; cluster-level estimates carry wide intervals. Reported with IQR, not point estimates alone.
+- 45 narratives is small; cluster-level estimates carry wide intervals. Reported with IQR, not point estimates alone.
 - Cofacts and platform timestamps are observational; we do not infer causation between PRC-origin and domestic spread, only temporal sequence.
 
 ## 10. Reproducibility
@@ -84,7 +84,7 @@ The single number on slide 1; the diverging bar on slide 2; the recommendation o
 
 git clone https://github.com/natharzu/narrative-latency-tw.git
 cd narrative-latency-tw
-pip install -r requirements.txt
+python3 -m pip install --user -r requirements.txt
 jupyter notebook notebooks/01_clean.ipynb
 
 ```
