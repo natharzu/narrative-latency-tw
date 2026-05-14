@@ -1,0 +1,46 @@
+narrative_id,case_id,case_name,narrative_text,topic_cluster,time_frame_start,time_frame_end,stage_1_date,stage_2_date,stage_3_date,stage_4_date,election_window,source_url,retrieved_at
+B.11,B.1,Kansai Airport,"Chinese embassy sends buses to evacuate passengers, Chinese get on buses first",ccp_information_manipulation,2018.9,2018.9,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.12,B.1,Kansai Airport,Taiwanese can get on buses too if self-identify as Chinese,ccp_information_manipulation,2018.9,2018.9,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.21,B.2,Chen Chu is corrupt,Kaohsiung Mayor Chen Chu is corrupt,ccp_information_manipulation,2019.4,2019.12,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.22,B.2,Chen Chu is corrupt,"Feeling unbearable, an MJIB official leaked that Kaohsiung Mayor Chen Chu is corrupt",ccp_information_manipulation,2019.4,2019.12,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.31,B.3,American influenza is deadlier than COVID-19,"American influenza, causing 6,600 deaths, is deadlier than COVID-19",ccp_information_manipulation,2020.1,2020.4,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.32,B.3,American influenza is deadlier than COVID-19,American influenza is deadlier than COVID-19 and ignored by news media,ccp_information_manipulation,2020.1,2020.4,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.41,B.4,US spreads coronavirus at Wuhan Military World Games,US brought coronavirus to China through Wuhan Military World Games,ccp_information_manipulation,2020.1,2020.6,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.42,B.4,US spreads coronavirus at Wuhan Military World Games,Coronavirus is a US-made bio weapon,ccp_information_manipulation,2020.1,2020.6,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.43,B.4,US spreads coronavirus at Wuhan Military World Games,Coronavirus was leaked from a US lab,ccp_information_manipulation,2020.1,2020.6,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.51,B.5,American influenza is COVID-19,Asahi Shimbun: COVID-19 outbreaks in the US long before Wuhan?,ccp_information_manipulation,2020.2,2020.5,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.52,B.5,American influenza is COVID-19,Pan Hwai-Tzong: US is source of coronavirus?,ccp_information_manipulation,2020.2,2020.5,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.53,B.5,American influenza is COVID-19,Zhao Li-Jian: US CDC chief admits flu patients may have had COVID-19,ccp_information_manipulation,2020.2,2020.5,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.54,B.5,American influenza is COVID-19,Belleville Mayor contracted COVID-19 in November 2019,ccp_information_manipulation,2020.2,2020.5,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.61,B.6,Liberate America,Liberate America,ccp_information_manipulation,2020.5,2020.6,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.71,B.7,Central Election Commission vote tampering,CEC stuffed votes with blank ballots,ccp_information_manipulation,2019.6,2020.8,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.72,B.7,Central Election Commission vote tampering,CEC used waxed ballots to cause invalid votes,ccp_information_manipulation,2019.6,2020.8,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+B.73,B.7,Central Election Commission vote tampering,CEC altered vote count with computer systems,ccp_information_manipulation,2019.6,2020.8,,,,,,https://iorg.tw/_en/r/b,2026-05-13T18:30:00+00:00
+DA11.1,DA.11,US skepticism Afghan withdrawal,US is supporting Taiwan for now but will eventually abandon Taiwan,us_skepticism,2021.8,2021.8,,,,,,https://iorg.tw/_en/da/11,2026-05-13T18:40:00+00:00
+DA11.2,DA.11,US skepticism Afghan withdrawal,US had abandoned Vietnam Hongkong and Afghanistan so it will abandon Taiwan,us_skepticism,2021.8,2021.8,,,,,,https://iorg.tw/_en/da/11,2026-05-13T18:40:00+00:00
+DA11.3,DA.11,US skepticism Afghan withdrawal,New York Times says America backing for allies is not unlimited,us_skepticism,2021.8,2021.8,,,,,,https://iorg.tw/_en/da/11,2026-05-13T18:40:00+00:00
+DA11.4,DA.11,US skepticism Afghan withdrawal,Afghanistan is a lesson to Taiwan,us_skepticism,2021.8,2021.8,,,,,,https://iorg.tw/_en/da/11,2026-05-13T18:40:00+00:00
+DA11.5,DA.11,US skepticism Afghan withdrawal,Today Afghanistan tomorrow Taiwan,us_skepticism,2021.8,2021.8,,,,,,https://iorg.tw/_en/da/11,2026-05-13T18:40:00+00:00
+DA11.6,DA.11,US skepticism Afghan withdrawal,America power is declining and US cannot win against Taliban so cannot protect Taiwan,us_skepticism,2021.8,2021.8,,,,,,https://iorg.tw/_en/da/11,2026-05-13T18:40:00+00:00
+DA11.7,DA.11,US skepticism Afghan withdrawal,Afghanistan has become a weak spot making US powerless to protect Taiwan against China,us_skepticism,2021.8,2021.8,,,,,,https://iorg.tw/_en/da/11,2026-05-13T18:40:00+00:00
+DA11.8,DA.11,US skepticism Afghan withdrawal,US military power is inferior to China in West Pacific insufficient to protect Taiwan,us_skepticism,2021.8,2021.8,,,,,,https://iorg.tw/_en/da/11,2026-05-13T18:40:00+00:00
+DA11.9,DA.11,US skepticism Afghan withdrawal,US brings about wars everywhere around the world,us_skepticism,2021.8,2021.8,,,,,,https://iorg.tw/_en/da/11,2026-05-13T18:40:00+00:00
+DA11.10,DA.11,US skepticism Afghan withdrawal,Trump said bad things will happen to Taiwan,us_skepticism,2021.8,2021.8,,,,,,https://iorg.tw/_en/da/11,2026-05-13T18:40:00+00:00
+DA11.11,DA.11,US skepticism Afghan withdrawal,US provokes China trying to cause cross-strait war,us_skepticism,2021.8,2021.8,,,,,,https://iorg.tw/_en/da/11,2026-05-13T18:40:00+00:00
+DA12.1,DA.12,China vaccine narratives,DPP authorities not buying Chinese vaccines is being possessed by political demons,vaccine,2021.4,2021.8,,,,,,https://iorg.tw/_en/da/12,2026-05-13T18:40:00+00:00
+DA12.2,DA.12,China vaccine narratives,PRC TAO says thanks to Spring Spout overseas Taiwanese are getting vaccinated in PRC embassies,vaccine,2021.4,2021.8,,,,,,https://iorg.tw/_en/da/12,2026-05-13T18:40:00+00:00
+DA12.3,DA.12,China vaccine narratives,Taiwanese going to China to get vaccinated,vaccine,2021.4,2021.8,,,,,,https://iorg.tw/_en/da/12,2026-05-13T18:40:00+00:00
+DA12.4,DA.12,China vaccine narratives,Taiwan to gift vaccines to diplomatic allies,vaccine,2021.4,2021.8,,,,,,https://iorg.tw/_en/da/12,2026-05-13T18:40:00+00:00
+DA12.5,DA.12,China vaccine narratives,America has not sold vaccines to Taiwan,vaccine,2021.4,2021.8,,,,,,https://iorg.tw/_en/da/12,2026-05-13T18:40:00+00:00
+DA12.6,DA.12,China vaccine narratives,Taiwan taking vaccines from Japan is using the pandemic to plot for independence,vaccine,2021.4,2021.8,,,,,,https://iorg.tw/_en/da/12,2026-05-13T18:40:00+00:00
+DA12.7,DA.12,China vaccine narratives,Japan AZ vaccine is not on WHO EUL and DPP is murdering Taiwanese with Japanese vaccines,vaccine,2021.4,2021.8,,,,,,https://iorg.tw/_en/da/12,2026-05-13T18:40:00+00:00
+DA12.8,DA.12,China vaccine narratives,Taiwan uses arm purchases and semiconductor chips in exchange for American vaccines,vaccine,2021.4,2021.8,,,,,,https://iorg.tw/_en/da/12,2026-05-13T18:40:00+00:00
+DA12.9,DA.12,China vaccine narratives,US company Blackwater invested in the R&D of Taiwanese vaccine UB-612,vaccine,2021.4,2021.8,,,,,,https://iorg.tw/_en/da/12,2026-05-13T18:40:00+00:00
+DA12.10,DA.12,China vaccine narratives,Taiwan-produced Medigen vaccine and Moderna are like twins from the same origin,vaccine,2021.4,2021.8,,,,,,https://iorg.tw/_en/da/12,2026-05-13T18:40:00+00:00
+DA54.1,DA.54,Pre-election Taiwan-US narratives,US views certain politician or political party in Taiwan as troublemaker,pre_election,2021.4,2023.9,,,,,,https://iorg.tw/_en/da/54,2026-05-13T18:40:00+00:00
+DA54.2,DA.54,Pre-election Taiwan-US narratives,US uses Taiwan as chess piece,pre_election,2021.4,2023.9,,,,,,https://iorg.tw/_en/da/54,2026-05-13T18:40:00+00:00
+DA54.3,DA.54,Pre-election Taiwan-US narratives,US is uncertain or reassured about certain politician in Taiwan,pre_election,2021.4,2023.9,,,,,,https://iorg.tw/_en/da/54,2026-05-13T18:40:00+00:00
+DA54.4,DA.54,Pre-election Taiwan-US narratives,US and China are jointly administering Taiwan,pre_election,2021.4,2023.9,,,,,,https://iorg.tw/_en/da/54,2026-05-13T18:40:00+00:00
+DA54.5,DA.54,Pre-election Taiwan-US narratives,US pushes or blocks cross-strait negotiations,pre_election,2021.4,2023.9,,,,,,https://iorg.tw/_en/da/54,2026-05-13T18:40:00+00:00
+DA54.6,DA.54,Pre-election Taiwan-US narratives,US interferes with Taiwan elections,pre_election,2021.4,2023.9,,,,,,https://iorg.tw/_en/da/54,2026-05-13T18:40:00+00:00
+DA54.7,DA.54,Pre-election Taiwan-US narratives,Taiwan is banking on US support and plotting for independence,pre_election,2021.4,2023.9,,,,,,https://iorg.tw/_en/da/54,2026-05-13T18:40:00+00:00
