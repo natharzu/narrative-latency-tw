@@ -1,34 +1,72 @@
-"""01_clean equivalent — load raw IORG CSV, validate schema, save processed."""
+"""
+Cofacts data loader and cleaner — local CSV mode.
+
+Reads zipped CSVs from data/raw/cofacts/ (not in git — re-download from
+https://huggingface.co/datasets/Cofacts/line-msg-fact-check-tw).
+Joins each article to its FIRST normal reply, computes article->reply latency.
+Output: data/processed/cofacts_latency.csv
+"""
 import pandas as pd
 from pathlib import Path
 
-RAW = Path("data/raw/iorg_narratives_scraped.csv")
-OUT = Path("data/processed/narratives_clean.csv")
+COFACTS = Path("data/raw/cofacts")
+OUT = Path("data/processed")
+OUT.mkdir(parents=True, exist_ok=True)
 
-df = pd.read_csv(RAW)
-print(f"Loaded {len(df)} narratives from {RAW}")
+print("Loading Cofacts tables from local CSV zips...")
+articles = pd.read_csv(COFACTS / "articles.csv.zip")
+replies = pd.read_csv(COFACTS / "replies.csv.zip")
+article_replies = pd.read_csv(COFACTS / "article_replies.csv.zip")
 
-expected = {"narrative_id", "case_id", "case_name", "narrative_text",
-            "topic_cluster", "time_frame_start", "time_frame_end",
-            "stage_1_date", "stage_2_date", "stage_3_date", "stage_4_date",
-            "election_window", "source_url", "retrieved_at"}
-missing = expected - set(df.columns)
-assert not missing, f"Missing columns: {missing}"
-print(f"Schema OK ({len(df.columns)} columns)")
+print(f"  articles:        {len(articles):>8,} rows")
+print(f"  replies:         {len(replies):>8,} rows")
+print(f"  article_replies: {len(article_replies):>8,} rows")
 
-print("\nNarratives by topic cluster:")
-print(df["topic_cluster"].value_counts().to_string())
+# Keep only NORMAL status (drop DELETED + BLOCKED)
+articles = articles[articles["status"] == "NORMAL"].copy()
+article_replies = article_replies[article_replies["status"] == "NORMAL"].copy()
 
-print(f"\nUnique cases: {df['case_id'].nunique()}")
+# Parse timestamps to UTC datetime
+for df, col in [(articles, "createdAt"),
+                (replies, "createdAt"),
+                (article_replies, "createdAt")]:
+    df[col] = pd.to_datetime(df[col], utc=True, errors="coerce")
 
-print("\nStage date completeness:")
-for col in ["stage_1_date", "stage_2_date", "stage_3_date", "stage_4_date"]:
-    filled = df[col].notna().sum()
-    print(f"  {col}: {filled}/{len(df)} filled ({filled/len(df)*100:.0f}%)")
+# For each article, take its FIRST article_reply (chronologically)
+first_ar = (article_replies
+            .sort_values("createdAt")
+            .groupby("articleId", as_index=False)
+            .first())
 
-clean = df.dropna(subset=["stage_1_date", "stage_4_date"])
-print(f"\nAfter drop rule (Stage 1 + Stage 4 required): {len(clean)}/{len(df)} narratives retained")
+# Join: articles -> first article_reply -> replies
+joined = (articles[["id", "createdAt", "articleType", "text"]]
+          .rename(columns={"id": "articleId", "createdAt": "article_createdAt"})
+          .merge(first_ar[["articleId", "replyId", "replyType"]], on="articleId", how="inner")
+          .merge(replies[["id", "createdAt", "type"]]
+                 .rename(columns={"id": "replyId",
+                                  "createdAt": "reply_createdAt",
+                                  "type": "reply_type"}),
+                 on="replyId", how="inner"))
 
-OUT.parent.mkdir(parents=True, exist_ok=True)
-df.to_csv(OUT, index=False)
-print(f"\nSaved to {OUT}")
+# Latency in hours; drop invalid (<0 or >1 year)
+joined["latency_hours"] = (
+    (joined["reply_createdAt"] - joined["article_createdAt"]).dt.total_seconds() / 3600.0
+)
+before = len(joined)
+joined = joined[(joined["latency_hours"] >= 0) & (joined["latency_hours"] <= 24 * 365)]
+print(f"Dropped {before - len(joined):,} rows with invalid latency (<0 or >1yr)")
+
+# Focus on TEXT articles
+joined = joined[joined["articleType"] == "TEXT"].copy()
+
+# Trim text for storage (full text not needed downstream)
+joined["text_preview"] = joined["text"].astype(str).str.slice(0, 200)
+joined = joined.drop(columns=["text"])
+
+print(f"Final dataset: {len(joined):,} article-reply pairs")
+print(f"  Date range: {joined['article_createdAt'].min()} -> {joined['article_createdAt'].max()}")
+print(f"  Median latency: {joined['latency_hours'].median():.1f} hours")
+
+out_path = OUT / "cofacts_latency.csv"
+joined.to_csv(out_path, index=False)
+print(f"Wrote {out_path}")
