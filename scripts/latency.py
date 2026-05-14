@@ -12,7 +12,7 @@ VIZ = Path("viz")
 VIZ.mkdir(exist_ok=True)
 
 df = pd.read_csv(IN)
-df["article_createdAt"] = pd.to_datetime(df["article_createdAt"], utc=True, errors="coerce")
+df["article_createdAt"] = pd.to_datetime(df["article_createdAt"], utc=True, format="ISO8601", errors="coerce")
 df["year"] = df["article_createdAt"].dt.year
 
 n = len(df)
