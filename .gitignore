@@ -1,1 +1,3 @@
 .DS_Store
+# Cofacts local snapshot (re-download from HF if needed; see data/raw/SOURCES.md)
+data/raw/cofacts/
