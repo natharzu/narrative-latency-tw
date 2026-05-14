@@ -1,53 +1,70 @@
-"""02_latency equivalent — compute Stage 1->4 deltas, summary stats, save chart."""
+"""
+Compute Cofacts article->reply latency metrics.
+Reads data/processed/cofacts_latency.csv (produced by clean.py).
+Writes viz/cofacts_latency_distribution.png + viz/cofacts_latency_by_year.png.
+"""
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-PROCESSED = Path("data/processed/narratives_clean.csv")
-VIZ = Path("viz/latency_by_cluster.png")
+IN = Path("data/processed/cofacts_latency.csv")
+VIZ = Path("viz")
+VIZ.mkdir(exist_ok=True)
 
-df = pd.read_csv(PROCESSED)
-print(f"Loaded {len(df)} narratives")
+df = pd.read_csv(IN)
+df["article_createdAt"] = pd.to_datetime(df["article_createdAt"], utc=True, errors="coerce")
+df["year"] = df["article_createdAt"].dt.year
 
-for col in ["stage_1_date", "stage_2_date", "stage_3_date", "stage_4_date"]:
-    df[col] = pd.to_datetime(df[col], errors="coerce")
+n = len(df)
+median_h = df["latency_hours"].median()
+p25, p75 = df["latency_hours"].quantile([0.25, 0.75])
+p90 = df["latency_hours"].quantile(0.90)
+pct_under_24h = (df["latency_hours"] < 24).mean() * 100
+pct_under_week = (df["latency_hours"] < 24 * 7).mean() * 100
 
-df_clean = df.dropna(subset=["stage_1_date", "stage_4_date"]).copy()
-print(f"With Stage 1 + Stage 4 dates: {len(df_clean)}")
+print("=" * 60)
+print("HEADLINE")
+print("=" * 60)
+print(f"N = {n:,} article-reply pairs")
+print(f"Median article->reply latency: {median_h:.1f} hours ({median_h/24:.2f} days)")
+print(f"IQR: [{p25:.1f}, {p75:.1f}] hours")
+print(f"P90: {p90:.1f} hours")
+print(f"{pct_under_24h:.1f}% of rumors get a fact-check reply within 24h")
+print(f"{pct_under_week:.1f}% within a week")
+print()
 
-if len(df_clean) == 0:
-    print("\n  No narratives have both Stage 1 and Stage 4 dates yet.")
-    print("  Per-stage transcription pending (M3 task, due May 15).")
-    print("  Running pipeline on SYNTHETIC dates to validate end-to-end...\n")
-    np.random.seed(42)
-    base = pd.to_datetime("2021-01-01")
-    df["stage_1_date"] = base + pd.to_timedelta(np.random.randint(0, 365, len(df)), unit="D")
-    df["stage_4_date"] = df["stage_1_date"] + pd.to_timedelta(np.random.randint(1, 30, len(df)), unit="D")
-    df_clean = df.copy()
-    SYNTHETIC = True
-else:
-    SYNTHETIC = False
+print("=" * 60)
+print("BY REPLY TYPE")
+print("=" * 60)
+by_type = df.groupby("reply_type")["latency_hours"].agg(["count", "median", "mean"]).round(1)
+print(by_type)
+print()
 
-df_clean["latency_days"] = (df_clean["stage_4_date"] - df_clean["stage_1_date"]).dt.days
+print("=" * 60)
+print("BY YEAR")
+print("=" * 60)
+by_year = df.groupby("year")["latency_hours"].agg(["count", "median"]).round(1)
+print(by_year)
 
-median = df_clean["latency_days"].median()
-iqr = df_clean["latency_days"].quantile([0.25, 0.75]).values
-mode_label = "SYNTHETIC" if SYNTHETIC else "REAL"
-print(f"\nHeadline [{mode_label}]: Median Stage 1->4 latency = {median:.1f} days, IQR = [{iqr[0]:.0f}, {iqr[1]:.0f}], N={len(df_clean)}")
-
-print("\nMedian latency by topic cluster:")
-by_cluster = df_clean.groupby("topic_cluster")["latency_days"].agg(["median", "count"]).sort_values("median")
-print(by_cluster.to_string())
-
-fig, ax = plt.subplots(figsize=(8, 4))
-by_cluster["median"].plot(kind="barh", ax=ax, color="steelblue")
-ax.set_xlabel("Median Stage 1->4 latency (days)")
-ax.set_title(f"Narrative latency by topic cluster ({mode_label} data, N={len(df_clean)})")
-ax.axvline(median, color="red", linestyle="--", alpha=0.5, label=f"Overall median: {median:.1f}d")
+# Chart 1: distribution (capped at p95 for readability)
+p95 = df["latency_hours"].quantile(0.95)
+fig, ax = plt.subplots(figsize=(10, 5))
+df[df["latency_hours"] <= p95]["latency_hours"].hist(bins=60, ax=ax, color="#3b82f6", alpha=0.8)
+ax.axvline(median_h, color="red", linestyle="--", label=f"Median = {median_h:.1f}h")
+ax.set_xlabel("Hours from rumor report to fact-check reply")
+ax.set_ylabel("Count")
+ax.set_title(f"Cofacts response latency (N={n:,}, capped at p95)")
 ax.legend()
-plt.tight_layout()
+fig.tight_layout()
+fig.savefig(VIZ / "cofacts_latency_distribution.png", dpi=120)
+print(f"\nSaved {VIZ / 'cofacts_latency_distribution.png'}")
 
-VIZ.parent.mkdir(parents=True, exist_ok=True)
-plt.savefig(VIZ, dpi=120, bbox_inches="tight")
-print(f"\nSaved chart to {VIZ}")
+# Chart 2: median by year
+fig, ax = plt.subplots(figsize=(10, 5))
+by_year["median"].plot(kind="bar", ax=ax, color="#10b981")
+ax.set_xlabel("Year")
+ax.set_ylabel("Median latency (hours)")
+ax.set_title("Cofacts: median rumor->reply latency by year")
+fig.tight_layout()
+fig.savefig(VIZ / "cofacts_latency_by_year.png", dpi=120)
+print(f"Saved {VIZ / 'cofacts_latency_by_year.png'}")
