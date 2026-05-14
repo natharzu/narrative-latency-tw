@@ -1,114 +1,142 @@
-# Scripts
+# Narrative Latency — Taiwan
 
-Utility scripts for the narrative-latency-tw capstone project.
+How long do suspicious LINE messages stay live in Taiwan before Cofacts' community fact-checks them? And has that response speed changed between election cycles?
 
-## Files
+---
 
-| File | Purpose |
-|---|---|
-| `clean.py` | Load raw IORG CSV, validate schema, save processed CSV |
-| `latency.py` | Compute Stage 1->4 deltas, summary stats by cluster, save chart |
-| `scrape_iorg.py` | (Stub) IORG scraper — rebuild from fresh session if needed |
+## Headline
 
-## How to run
+> **Between Taiwan's 2020 and 2024 presidential elections, Cofacts' community fact-check response slowed 10× — from a median of 6.7 hours in the 2020 election window to 67.2 hours in the 2024 window.**
 
-    cd ~/narrative-latency-tw
-    python3 scripts/clean.py
-    python3 scripts/latency.py
+- **N** = 5,798 (2020 window) vs 2,191 (2024 window) article-reply pairs
+- **Statistical test** Mann–Whitney U (one-sided, 2024 > 2020): **p < 10⁻²⁰⁰**
+- **Survivorship-robust** the 10.0× ratio holds when restricted to articles posted ≥6 months before the dataset snapshot (2026-05-10)
+- **Caveat** measures *Cofacts community response speed*, not Taiwan-wide rumor-debunking speed (Cofacts users are a self-selected subset of LINE)
 
-Outputs land in `data/processed/` and `viz/`.
+![Cofacts latency: 2020 vs 2024 Taiwan presidential elections](viz/election_window_comparison.png)
 
-## Dependencies
+---
 
+## Why it matters
+
+Most public reporting on disinformation counts *artifacts* (posts, accounts, narratives). This project shifts the unit of analysis from artifact to **temporal pattern** — how long a rumor stays unchallenged is the actual intervention window for fact-checkers and platform trust & safety teams.
+
+Two findings emerge from the same dataset:
+
+1. **Within an election cycle, the Cofacts community mobilizes.** Election-window rumors (90 days around the 2020 or 2024 presidential elections) get fact-checked in a median of **10.7 hours** vs **24.0 hours** for non-election baseline (p ≈ 10⁻¹¹⁷).
+2. **Across election cycles, the same community has slowed dramatically.** The 2024 election window is 10× slower than 2020 — so the 2024 slowdown is *despite* election mobilization, not because of its absence.
+
+**Implication for Cofacts and IORG response teams:** civic mobilization alone isn't compensating for structural decline in the editor community. Editor recruitment + AI-assisted triage on the slowest topic cluster (US-skepticism, median 34.3h) are concrete levers.
+
+---
+
+## Method
+
+1. **Source.** Cofacts open dataset (Hugging Face snapshot 2026-05-10, CC BY-SA 4.0) — 283,153 articles + 144,255 replies + 159,055 article-reply links from Taiwan's LINE rumor-reporting bot.
+2. **Join.** Each article → its first (chronological) `article_reply` → the matching `replies` row.
+3. **Filter.** `status = NORMAL`, `articleType = TEXT`, drop pairs with negative latency or latency > 1 year (13,992 rows dropped, 16.9% drop rate).
+4. **Compute.** `latency_hours = reply_createdAt − article_createdAt`. Final dataset: **68,533 article-reply pairs spanning 2016-12 → 2026-05**.
+5. **Compare windows.** 2020 election window = 2019-10-13 to 2020-04-10; 2024 election window = 2023-10-15 to 2024-04-12 (each is ±90 days around the election date). Mann–Whitney U test, one-sided.
+6. **Cluster tag.** Keyword matching on `text_preview` against IORG's 4-cluster taxonomy (vaccine, US-skepticism, pre-election, CCP information manipulation). 87.7% of articles fell outside the simple keyword taxonomy → reported as "Other" and discussed as a finding in its own right.
+7. **Sensitivity.** Re-ran the 2020 vs 2024 comparison restricted to articles posted ≥6 months before the snapshot date — ratio unchanged.
+
+Full pipeline:
+
+    scripts/clean.py        → data/processed/cofacts_latency.csv  (68,533 rows)
+    scripts/latency.py      → headline stats + viz/cofacts_latency_distribution.png
+                                                + viz/cofacts_latency_by_year.png
+    scripts/m4_analysis.py  → election-window stats + cluster tags
+                              → data/processed/cofacts_m4.csv
+                              → viz/election_window_comparison.png
+
+---
+
+## Data sources
+
+| Source | Role | Records | License |
+|---|---|---|---|
+| [Cofacts — line-msg-fact-check-tw (HF)](https://huggingface.co/datasets/Cofacts/line-msg-fact-check-tw) | Primary timing data (article submissions + community replies) | ~100k articles, ~50k replies, 2016–2026 | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
+| [Cofacts open data repo](https://github.com/cofacts/opendata) | Alternative access path (CSV releases) | Same as HF mirror | CC BY-SA 4.0 |
+| [Cofacts GraphQL API](https://api.cofacts.tw/graphql) | Live query path (for refresh) | Real-time | CC BY-SA 4.0 |
+| [IORG — Information Operations Research Group](https://iorg.tw/open) | 4-cluster narrative taxonomy (used for keyword tagging) | 45 hand-curated narratives, 2018–2023 | CC BY-SA 4.0 |
+| [Doublethink Lab — Artificial Multiverse report](https://medium.com/doublethinklab/artificial-multiverse-foreign-information-manipulation-and-interference-in-taiwans-2024-national-f3e22ac95fe7) | 2024 election context | Narrative analysis | Open, attribution |
+
+See [`data/raw/SOURCES.md`](data/raw/SOURCES.md) for full retrieval notes and citations.
+
+---
+
+## Charts
+
+- **Election windows compared** — [`viz/election_window_comparison.png`](viz/election_window_comparison.png)
+- **Overall latency distribution** — [`viz/cofacts_latency_distribution.png`](viz/cofacts_latency_distribution.png)
+- **Median latency by year (2016 → 2026)** — [`viz/cofacts_latency_by_year.png`](viz/cofacts_latency_by_year.png)
+
+![Median latency by year](viz/cofacts_latency_by_year.png)
+
+---
+
+## Limitations
+
+- **Selection bias.** Cofacts users are people who installed a fact-checking chatbot — a self-selected, civically-engaged subset of LINE. This measures *Cofacts community response speed*, not Taiwan-wide rumor debunking.
+- **Lower-bound timestamps.** `article.createdAt` is when the rumor reached Cofacts via LINE bot, not when it first appeared anywhere. Real rumor age is at least this large.
+- **Cluster tagging is approximate.** 87.7% of articles didn't match any of IORG's 4-cluster keyword set, suggesting IORG's curated taxonomy is too narrow for Cofacts' content space. Reported as "Other" rather than forced into the four buckets.
+- **Reply correctness not assessed.** Any normal-status reply counts as a "debunk event" regardless of its factual accuracy.
+- **Filter rule pre-registered.** Drop negative-latency and >1-year-latency pairs; restrict to `articleType = TEXT`. 16.9% of joined pairs dropped, reported transparently.
+
+---
+
+## Reproducibility
+
+    # Clone
+    git clone https://github.com/natharzu/narrative-latency-tw.git
+    cd narrative-latency-tw
+
+    # Install dependencies
     python3 -m pip install --user -r requirements.txt
 
-Current deps: requests, beautifulsoup4, lxml, pandas, matplotlib.
+    # Get the Cofacts snapshot
+    # Option A: HuggingFace web UI → download articles.csv.zip, replies.csv.zip,
+    #           article_replies.csv.zip from
+    #           https://huggingface.co/datasets/Cofacts/line-msg-fact-check-tw
+    # Option B: huggingface-cli download Cofacts/line-msg-fact-check-tw \
+    #           --repo-type=dataset --local-dir=data/raw/cofacts
+    mkdir -p data/raw/cofacts
+    # place the three .csv.zip files in data/raw/cofacts/
 
-Always use `python3 -m pip` (not `pip3`) — see Problem 7.
+    # Run the pipeline
+    python3 scripts/clean.py         # produces data/processed/cofacts_latency.csv
+    python3 scripts/latency.py       # headline stats + 2 charts
+    python3 scripts/m4_analysis.py   # election-window + cluster stats + 1 chart
 
-## Lessons learned (2026-05-13 session)
+**Environment.** Python 3.13, pandas 2.2+, matplotlib 3.10+, scipy 1.11+. See [`requirements.txt`](requirements.txt).
 
-### Problem 1: pbpaste truncates multi-line code from Notion chat
+**Snapshot pinning.** All numbers in this README come from Cofacts HF snapshot dated 2026-05-10. Re-running on a newer snapshot will produce different numbers; the 10× ratio is the headline claim for this specific snapshot.
 
-Symptom: pasting via `pbpaste > scripts/foo.py` produces a 15-16 line file from a 90+ line source.
+---
 
-Working fix: bypass pbpaste and the terminal entirely. Commit files via the GitHub web editor:
+## Repository layout
 
-1. github.com/natharzu/narrative-latency-tw → navigate to target folder
-2. "Add file" → "Create new file" (or pencil icon to edit existing)
-3. Paste content directly into the GitHub editor
-4. Commit with a descriptive message
-5. `git pull origin main` locally
+    data/raw/                   IORG narratives + SOURCES.md (Cofacts snapshot is gitignored)
+    data/processed/             cofacts_latency.csv, cofacts_m4.csv
+    scripts/                    clean.py, latency.py, m4_analysis.py, README.md
+    notebooks/                  jupytext-generated mirrors of scripts/
+    viz/                        PNG charts (committed)
+    report/slides.pdf           5-slide presentation
+    PROPOSAL.md                 project brief (mirrors Notion brief)
+    requirements.txt
 
-Proven across 5+ deliverables on 2026-05-13.
+---
 
-### Problem 2: __future__ markdown mangling
+## Attribution
 
-Symptom: `from __future__ import annotations` arrives as `from **future** import annotations`.
+Cofacts data:
 
-Cause: Notion renders `__text__` as bold and copies the rendered form.
+> This data by Cofacts message reporting chatbot and crowd-sourced fact-checking community is licensed under CC BY-SA 4.0. To provide more info, please visit Cofacts LINE bot https://line.me/ti/p/@cofacts
 
-Fix: GitHub web editor preserves text literally.
+IORG and Doublethink Lab data used per their respective open-data terms; see [`data/raw/SOURCES.md`](data/raw/SOURCES.md).
 
-### Problem 3: Heredoc stuck at heredoc> prompt
+---
 
-Symptom: pasting `cat << 'PYEOF' ... PYEOF` into zsh leaves the shell waiting.
+## Course context
 
-Cause: closing delimiter must be on its own line with no leading whitespace.
-
-Fix: Ctrl+C to abort. Use the GitHub web path instead.
-
-### Problem 4: Nested folder after re-running clone
-
-Symptom: `narrative-latency-tw/narrative-latency-tw/`.
-
-Recovery:
-
-    mv narrative-latency-tw /tmp/inner-real
-    rm -rf narrative-latency-tw
-    mv /tmp/inner-real narrative-latency-tw
-
-### Problem 5: git pull --rebase blocked by unstaged changes
-
-Symptom: `error: cannot pull with rebase: You have unstaged changes.`
-
-Fix:
-
-    git add -A
-    git commit -m "WIP: local changes before rebase"
-    git pull --rebase origin main
-    git push
-
-### Problem 6: Push rejected, fetch first
-
-Symptom: `! [rejected] main -> main (fetch first)` — remote has commits you don't have (e.g. from GitHub web edits).
-
-Fix:
-
-    git pull --rebase origin main
-    git push
-
-### Problem 7: pip3 installs into wrong Python version
-
-Symptom: `pip3 install matplotlib` reports "Requirement already satisfied" but `python3 -c "import matplotlib"` still fails with ModuleNotFoundError.
-
-Cause: on macOS with multiple Python versions, `pip3` and `python3` may point to different interpreters with separate site-packages. Example seen on this setup:
-- `pip3` → Python 3.9 (`Library/Python/3.9/`)
-- `python3` → Python 3.13 (`Library/Python/3.13/`)
-
-Fix: always install via the same Python that runs the scripts:
-
-    python3 -m pip install --user matplotlib
-    python3 -c "import matplotlib; print(matplotlib.__file__)"
-
-The verify line confirms the install landed in the expected site-packages directory. Use `python3 -m pip` for every install in this project — never bare `pip3`.
-
-## Bug in chat code blocks
-
-When code blocks contain other code blocks (e.g. triple-backtick fences inside a markdown file), the outer fence can close at the first inner triple-backtick. Workaround: use a 4-backtick outer fence, or use 4-space indented code for inner blocks.
-
-## The golden rule
-
-Notion chat → GitHub web editor → `git pull` locally.
-Do not paste multi-line code from Notion directly into the terminal.
-Tested across 5+ deliverables on 2026-05-13 — works every time.
+Capstone project — data storytelling, May 2026. Slides: [`report/slides.pdf`](report/slides.pdf). Project brief: [`PROPOSAL.md`](PROPOSAL.md).
