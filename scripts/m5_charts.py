@@ -26,7 +26,7 @@ VIZ.mkdir(exist_ok=True)
 
 # ---------- load ----------
 df = pd.read_csv(ROOT / "data/processed/cofacts_m4.csv")
-df["article_createdAt"] = pd.to_datetime(df["article_createdAt"], format="ISO8601")
+df["article_createdAt"] = pd.to_datetime(df["article_createdAt"], format="ISO8601", utc=True).dt.tz_localize(None)
 
 df["year"] = df["article_createdAt"].dt.year
 
