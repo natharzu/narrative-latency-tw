@@ -25,10 +25,9 @@ VIZ = ROOT / "viz"
 VIZ.mkdir(exist_ok=True)
 
 # ---------- load ----------
-df = pd.read_csv(
-    ROOT / "data/processed/cofacts_m4.csv",
-    parse_dates=["article_createdAt"],
-)
+df = pd.read_csv(ROOT / "data/processed/cofacts_m4.csv")
+df["article_createdAt"] = pd.to_datetime(df["article_createdAt"], format="ISO8601")
+
 df["year"] = df["article_createdAt"].dt.year
 
 # Derive election window from createdAt — self-sufficient regardless of m4 column naming.
