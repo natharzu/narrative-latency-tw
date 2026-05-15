@@ -52,7 +52,7 @@ Per-file retrieval notes and provenance: [`data/raw/SOURCES.md`](./data/raw/SOUR
 7. **Trend.** Median latency by year, 2018 → 2026.
 8. **Sensitivity.** Re-run 2020 vs 2024 comparison restricted to articles posted ≥6 months before the snapshot. The 10× ratio is robust to survivorship.
 
-Pipeline scripts: [`scripts/01_clean.py`](./scripts/01_clean.py) → [`scripts/02_latency.py`](./scripts/02_latency.py) → [`scripts/03_election_windows.py`](./scripts/03_election_windows.py). Notebooks are generated via [jupytext](https://jupytext.readthedocs.io/) from the scripts above.
+Pipeline scripts (run in order): [`scripts/01_clean.py`](./scripts/01_clean.py) → [`scripts/02_latency.py`](./scripts/02_latency.py) → [`scripts/03_election_windows.py`](./scripts/03_election_windows.py) → [`scripts/04_final_charts.py`](./scripts/04_final_charts.py). Notebooks are generated via [jupytext](https://jupytext.readthedocs.io/) from the scripts 1–3 above.
 
 ## 5. Stakeholder
 
