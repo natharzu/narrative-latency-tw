@@ -103,8 +103,8 @@ Three concrete moves recommended on slide 5 of the deck:
     # Run the full pipeline
     python3 scripts/clean.py
     python3 scripts/latency.py
-    python3 scripts/m4_analysis.py
-    python3 scripts/m5_charts.py
+    python3 scripts/analysis.py
+    python3 scripts/charts.py
 
     # Or open the jupytext-generated notebooks
     jupyter notebook notebooks/02_latency.ipynb
