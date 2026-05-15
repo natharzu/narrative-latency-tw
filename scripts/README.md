@@ -45,7 +45,7 @@ Full pipeline:
     scripts/clean.py        → data/processed/cofacts_latency.csv  (68,533 rows)
     scripts/latency.py      → headline stats + viz/cofacts_latency_distribution.png
                                                 + viz/cofacts_latency_by_year.png
-    scripts/m4_analysis.py  → election-window stats + cluster tags
+    scripts/analysis.py  → election-window stats + cluster tags
                               → data/processed/cofacts_m4.csv
                               → viz/election_window_comparison.png
 
@@ -118,7 +118,7 @@ See [`data/raw/SOURCES.md`](data/raw/SOURCES.md) for full retrieval notes and ci
 
     data/raw/                   IORG narratives + SOURCES.md (Cofacts snapshot is gitignored)
     data/processed/             cofacts_latency.csv, cofacts_m4.csv
-    scripts/                    clean.py, latency.py, m4_analysis.py, README.md
+    scripts/                    clean.py, latency.py, analysis.py, charts.py, README.md
     notebooks/                  jupytext-generated mirrors of scripts/
     viz/                        PNG charts (committed)
     report/slides.pdf           5-slide presentation
