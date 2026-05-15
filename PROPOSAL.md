@@ -74,7 +74,7 @@ All artifacts live in the GitHub repo so the project reads end-to-end without ex
 
 - [x] `data/raw/` — 45 IORG narratives (cluster taxonomy reference)
 - [x] `data/raw/SOURCES.md` — hyperlinks + retrieval notes for every source
-- [x] `scripts/01_clean.py`, `scripts/02_latency.py`, `scripts/03_election_windows.py`
+- [x] `scripts/01_clean.py`, `scripts/02_latency.py`, `scripts/03_election_windows.py`, `scripts/04_final_charts.py`
 - [x] `data/processed/cofacts_latency.csv` (N=68,533) + `data/processed/cofacts_election_windows.csv`
 - [x] `viz/cofacts_latency_distribution.png`, `viz/cofacts_latency_by_year.png`, `viz/election_window_comparison.png`
 - [x] `notebooks/01_clean.ipynb`, `02_latency.ipynb`, `03_election_windows.ipynb` (jupytext-generated)
