@@ -2,7 +2,7 @@
 M4 analysis — election-window comparison, cluster tagging, survivorship sensitivity.
 
 Inputs:  data/processed/cofacts_latency.csv
-Outputs: data/processed/cofacts_m4.csv (adds election_window + topic_cluster)
+Outputs: data/processed/cofacts_election_windows.csv (adds election_window + topic_cluster)
          viz/election_window_comparison.png
 """
 import pandas as pd
@@ -11,7 +11,7 @@ from pathlib import Path
 from scipy.stats import mannwhitneyu
 
 IN = Path("data/processed/cofacts_latency.csv")
-OUT = Path("data/processed/cofacts_m4.csv")
+OUT = Path("data/processed/cofacts_election_windows.csv")
 VIZ = Path("viz")
 VIZ.mkdir(exist_ok=True)
 

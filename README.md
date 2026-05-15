@@ -68,7 +68,7 @@ Three concrete moves recommended on slide 5 of the deck:
 
 - `data/raw/` — IORG narrative reference (cluster taxonomy)
 - `data/raw/SOURCES.md` — retrieval notes for every source
-- `data/processed/cofacts_latency.csv` (N = 68,533) and `cofacts_m4.csv`
+- `data/processed/cofacts_latency.csv` (N = 68,533) and `cofacts_election_windows.csv`
 - `scripts/01_clean.py`, `scripts/02_latency.py`, `scripts/03_election_windows.py`, `scripts/04_final_charts.py`
 - `notebooks/01_clean.ipynb`, `02_latency.ipynb`, `03_election_windows.ipynb` (jupytext-generated)
 - `viz/cofacts_latency_distribution.png`, `viz/cofacts_latency_by_year.png`, `viz/election_window_comparison.png`

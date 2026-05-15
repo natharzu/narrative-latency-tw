@@ -6,7 +6,7 @@ Run:
     python3 scripts/m5_charts.py
 
 Inputs:
-    data/processed/cofacts_m4.csv   (from m4_analysis.py)
+    data/processed/cofacts_election_windows.csv   (from m4_analysis.py)
 
 Outputs (overwrites):
     viz/cofacts_latency_distribution.png   — log x + 1d/3d/1w markers
@@ -25,7 +25,7 @@ VIZ = ROOT / "viz"
 VIZ.mkdir(exist_ok=True)
 
 # ---------- load ----------
-df = pd.read_csv(ROOT / "data/processed/cofacts_m4.csv")
+df = pd.read_csv(ROOT / "data/processed/cofacts_election_windows.csv")
 df["article_createdAt"] = pd.to_datetime(df["article_createdAt"], format="ISO8601", utc=True).dt.tz_localize(None)
 
 df["year"] = df["article_createdAt"].dt.year
