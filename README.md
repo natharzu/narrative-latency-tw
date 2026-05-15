@@ -1,91 +1,120 @@
 # Narrative Latency
-### Measuring how fast PRC-origin disinformation framings reach Taiwanese platforms
+
+### How fast does Taiwan's community fact-check its own LINE rumors — and how has that speed changed across election cycles?
 
 **Capstone — Practical Data Analysis**
 Author: Natalia Harzu
 
 ---
 
-## 1. Problem
+## Headline
 
-In Taiwan's information environment, the *speed* at which a foreign-origin narrative crosses from upstream PRC channels into domestic platforms (LINE, PTT, Threads) is as consequential as the narrative itself. Fast latency shortens the window for fact-checkers, civic-tech responders, and platform trust & safety teams to intervene.
+> **Between Taiwan's 2020 and 2024 presidential elections, Cofacts' community fact-check response slowed 10× — from a median of 6.7 hours in the 2020 window to 67.2 hours in the 2024 window.**
 
-Most public reporting treats disinformation as a catalog of *artifacts* (claims, posts, accounts). This project shifts the unit of analysis to **temporal patterns** — how long each narrative takes to traverse a four-stage diffusion path, and which topics travel fastest.
+N = 5,825 (2020 window) vs N = 2,200 (2024 window) · Mann–Whitney U, one-sided p < 10⁻²⁰⁰ · Survivorship-robust: the 10.0× ratio holds when restricted to articles posted ≥6 months before the snapshot.
 
-## 2. Research question
+Baseline: overall median 21.2 h across N = 68,533 article-reply pairs, 2016–2026. Snapshot date: 2026-05-10.
 
-> **For Taiwan-targeted narratives catalogued between 2021–2023, what is the distribution of latency between Stage 1 (PRC-origin appearance) and Stage 4 (domestic Taiwanese platform spread), and how does it vary by topic cluster?**
+---
 
-Secondary questions:
-- Which topic clusters have the shortest median latency?
-- Are election-period narratives faster than non-election baseline?
-- Where in the Stage 1 → 4 path is the largest delay concentrated?
+## 1. Problem framing
+
+In Taiwan's information environment, the *speed* at which a rumor moves through domestic platforms is as consequential as the rumor itself. The window in which a fact-check can intervene closes fast.
+
+Most public reporting treats disinformation as a catalog of *artifacts* (claims, posts, accounts). This project shifts the unit of analysis from artifact to **temporal pattern** — using Cofacts, Taiwan's community-driven LINE rumor-archive, to measure how fast the community itself responds and how that response speed has changed.
+
+The four-stage upstream pipeline (PRC state media → content farms → Want-Want-aligned KOLs → anonymous LINE forwards) is documented qualitatively by IORG and Doublethink Lab. This project does **not** attempt to measure Stage 1 → Stage 4 latency — Cofacts data only contains Stage 4 (domestic LINE) artifacts. We measure response latency *within* that domestic stage, treating the IORG pipeline as the threat context for which our metric is the response signal.
+
+## 2. Research questions
+
+1. **Primary.** What is the distribution of *article → first community fact-check reply* latency across Cofacts' Taiwan LINE rumor archive (HF snapshot 2026-05-10), and how does it vary by topic cluster (IORG-derived taxonomy)?
+2. **Secondary A.** Are rumors from election-period months (±90 days around 2020 / 2024 national elections) debunked faster or slower than the non-election baseline?
+3. **Secondary B.** How has community response latency evolved year-over-year (2018 → 2026), and what does the trend suggest about Cofacts' capacity?
 
 ## 3. Data sources
 
-| Source | Use | Access | License |
-|---|---|---|---|
-| **IORG** (Information Operations Research Group) — 45 narratives across 4 topic clusters (CCP info manipulation, US-skepticism, vaccine, pre-election), retrieved 2026-05-13 | Stage-tagged narratives with timestamps and topic labels | [iorg.tw/open](https://iorg.tw/open) · [methodology](https://iorg.tw/open/rm) | CC BY-SA 4.0 |
-| **Doublethink Lab** — election-period analyses (2020, 2024) | Cross-reference of narrative onset and election proximity | [China-Index-raw-data](https://github.com/doublethinklab/China-Index-raw-data) · [Artificial Multiverse report](https://medium.com/doublethinklab/artificial-multiverse-foreign-information-manipulation-and-interference-in-taiwans-2024-national-f3e22ac95fe7) | Open, attribution |
-| **Cofacts** open fact-check database | Optional: domestic spread signal, message-level timestamps | [cofacts.tw](https://cofacts.tw) · [GraphQL API](https://api.cofacts.tw/) | CC BY-SA |
+| Source | Role in this project | Records | Access | License |
+|---|---|---|---|---|
+| **Cofacts** open dataset (LINE rumor archive) | **Primary** — timestamped article submissions + community fact-check replies | ~100k articles, ~50k replies (HF snapshot 2026-05-10) | [HF dataset](https://huggingface.co/datasets/Cofacts/line-msg-fact-check-tw) · [opendata repo](https://github.com/cofacts/opendata) · [GraphQL API](https://api.cofacts.tw/graphql) | CC BY-SA 4.0 |
+| **IORG** narrative dataset (2018–2023) | Topic-cluster taxonomy reference for tagging Cofacts articles | 45 hand-curated narratives (17 B-series + 28 Dokidoki Alerts) | [iorg.tw/open](https://iorg.tw/open) | CC BY-SA 4.0 |
+| **Doublethink Lab** election analyses | Election-window cross-reference (2020, 2024) | Reports + raw indices | [China-Index-raw-data](https://github.com/doublethinklab/China-Index-raw-data) · [Artificial Multiverse report](https://medium.com/doublethinklab/artificial-multiverse-foreign-information-manipulation-and-interference-in-taiwans-2024-national-f3e22ac95fe7) | Open, attribution |
 
-Per-file retrieval notes: [`data/raw/SOURCES.md`](./data/raw/SOURCES.md).
-
-All sources are openly licensed and already cleaned at the narrative-record level, so iteration time goes toward analysis and story, not parsing.
+Per-file retrieval notes and provenance: [`data/raw/SOURCES.md`](./data/raw/SOURCES.md).
 
 ## 4. Method
 
-1. **Normalize** the IORG narrative records into a single table: `narrative_id`, `topic_cluster`, `stage_1_date … stage_4_date`, `election_window_flag`.
-2. **Compute latencies**: pairwise day-deltas between stages; total Stage 1 → 4 latency.
-3. **Cluster topics** using IORG's existing taxonomy; collapse rare categories.
-4. **Describe distributions**: median, IQR, and tail behavior per cluster.
-5. **Compare windows**: election vs. non-election periods (Mann–Whitney U).
-6. **Visualize** the headline finding with one diverging bar chart (median latency per cluster) and one stage-by-stage waterfall (where the lag accumulates).
+1. **Load** three Cofacts tables (`articles`, `replies`, `article_replies`) from the HF snapshot. Filter to `status = NORMAL` and `articleType = TEXT`.
+2. **Join** each article to its chronologically first `article_reply`, then to the `replies` row. Compute `latency_hours = reply_createdAt − article_createdAt`.
+3. **Drop** pairs with negative latency or latency > 1 year (data errors). Drop rate: 16.9 % on the snapshot.
+4. **Tag clusters** via keyword matching using IORG's 4-cluster taxonomy. Collapse residual into "Other"; the "Other" share (87.7 %) is reported as a finding in its own right.
+5. **Describe distributions** overall and per cluster: median, IQR, P90, % under 24 h, % under 1 week.
+6. **Compare windows.** 2020 + 2024 election windows (±90 days) vs. non-election baseline; Mann–Whitney U, one-sided.
+7. **Trend.** Median latency by year, 2018 → 2026.
+8. **Sensitivity.** Re-run 2020 vs 2024 comparison restricted to articles posted ≥6 months before the snapshot. The 10× ratio is robust to survivorship.
 
-## 5. Headline (target form)
+Pipeline scripts: [`scripts/clean.py`](./scripts/clean.py) → [`scripts/latency.py`](./scripts/latency.py) → [`scripts/m4_analysis.py`](./scripts/m4_analysis.py). Notebooks are generated via [jupytext](https://jupytext.readthedocs.io/) from the scripts above.
 
-> *"For Taiwan-targeted narratives 2021–2023, the median time from PRC-origin appearance to domestic LINE/PTT/Threads spread is **X days**, but **Y% of election-period narratives** complete the path in under 48 hours."*
+## 5. Stakeholder
 
-The single number on slide 1; the diverging bar on slide 2; the recommendation on slide 3.
+- **Primary:** Cofacts and IORG response teams — actionable signal for which topic clusters and time windows warrant additional editor capacity and pre-positioned counter-content.
+- **Secondary:** Platform trust & safety leads at LINE / Meta; civic-tech organisations operating around Taiwanese election cycles.
 
-## 6. Stakeholder
+Three concrete moves recommended on slide 5 of the deck:
+1. **Editor recruitment** focused on the 2024-era throughput gap.
+2. **AI-assisted triage** for the slowest topic cluster.
+3. **Public monthly latency dashboard** so Cofacts can manage to the metric.
 
-- **Primary:** Cofacts and IORG response teams — actionable signal for which topic clusters warrant pre-positioned counter-content.
-- **Secondary:** Platform trust & safety leads at LINE / Meta; civic-tech orgs operating during Taiwanese election cycles.
+## 6. Deliverables
 
-## 7. Deliverables
-
-- `data/` — raw and cleaned narrative tables (with provenance notes)
-- `notebooks/01_clean.ipynb` — normalization and stage parsing
-- `notebooks/02_latency.ipynb` — latency computation and statistics
-- `notebooks/03_viz.ipynb` — final figures
-- `report/` — 5-minute slide deck + speaker notes
+- `data/raw/` — IORG narrative reference (cluster taxonomy)
+- `data/raw/SOURCES.md` — retrieval notes for every source
+- `data/processed/cofacts_latency.csv` (N = 68,533) and `cofacts_m4.csv`
+- `scripts/clean.py`, `scripts/latency.py`, `scripts/m4_analysis.py`, `scripts/m5_charts.py`
+- `notebooks/01_clean.ipynb`, `02_latency.ipynb`, `03_m4.ipynb` (jupytext-generated)
+- `viz/cofacts_latency_distribution.png`, `viz/cofacts_latency_by_year.png`, `viz/election_window_comparison.png`
+- `report/slides.pdf` — 5-minute deck, 5 slides
+- `PROPOSAL.md` — full project brief with risks, milestones, and rubric mapping
 - `README.md` — this file
 
-## 8. Rubric mapping
+## 7. Rubric mapping
 
 | Criterion | Weight | How this project earns it |
 |---|---|---|
-| Clarity | 30 | Single headline number; one map-free diverging bar |
-| Insight | 25 | Shifts unit-of-analysis from artifact to temporal pattern — non-obvious framing |
-| Actionability | 20 | Named stakeholder (Cofacts/IORG) with a specific decision: where to pre-position responses |
-| Data rigor | — | Pre-cleaned open sources; reproducible notebooks |
+| Clarity | 30 | Single headline number (10× slowdown); one side-by-side histogram (2020 vs 2024); no map |
+| Insight | 25 | Two findings in one dataset — within-cycle mobilization (election windows faster) **and** across-cycle decay (2020 → 2024, 10× slower). Reframes Taiwan's information-environment story as a temporal-pattern problem rather than an artifact-counting problem. |
+| Actionability | 20 | Named stakeholder (Cofacts / IORG) with three specific moves: editor recruitment, AI-assisted triage, public latency dashboard |
+| Data rigor | — | Pre-cleaned open sources; reproducible scripts; explicit drop rule; survivorship sensitivity check |
 | Story arc | — | Problem → one number → one chart → one recommendation, fits 5 minutes |
 
-## 9. Limitations
+## 8. Limitations
 
-- IORG's stage tagging reflects observed appearance, not necessarily true origin — latency is a lower bound.
-- 45 narratives is small; cluster-level estimates carry wide intervals. Reported with IQR, not point estimates alone.
-- Cofacts and platform timestamps are observational; we do not infer causation between PRC-origin and domestic spread, only temporal sequence.
+- **Selection bias.** Cofacts users are a self-selected subset of LINE users who installed the fact-checking chatbot. The metric measures *Cofacts community response speed*, not Taiwan-wide rumor debunking speed.
+- **Lower bound on rumor age.** `article.createdAt` is when the rumor first reached Cofacts, not when it first appeared on LINE.
+- **Cluster tagging is approximate.** 87.7 % of articles fall into "Other" under IORG's 4-cluster taxonomy applied via keyword matching. The named-cluster comparisons (pre-election, US-skepticism) carry the bulk of the topic signal.
+- **No causal claim about PRC origin.** The analysis is descriptive and temporal. We do not infer that Cofacts-submitted rumors are PRC-originated — only that response speed has changed across election cycles in measurable, statistically significant ways.
+- **Reply correctness not adjudicated.** Any normal-status reply is treated as a debunk event regardless of whether the reply itself is factually correct.
 
-## 10. Reproducibility
+## 9. Reproducibility
 
-```bash
+    git clone https://github.com/natharzu/narrative-latency-tw.git
+    cd narrative-latency-tw
+    python3 -m pip install --user -r requirements.txt
 
-git clone https://github.com/natharzu/narrative-latency-tw.git
-cd narrative-latency-tw
-python3 -m pip install --user -r requirements.txt
-jupyter notebook notebooks/01_clean.ipynb
+    # Run the full pipeline
+    python3 scripts/clean.py
+    python3 scripts/latency.py
+    python3 scripts/m4_analysis.py
+    python3 scripts/m5_charts.py
 
-```
+    # Or open the jupytext-generated notebooks
+    jupyter notebook notebooks/02_latency.ipynb
 
+Snapshot: Hugging Face dataset `Cofacts/line-msg-fact-check-tw` as of 2026-05-10.
+
+## 10. Companion project
+
+[**think-thrice-stickerpack**](https://github.com/natharzu/think-thrice-stickerpack) — a digital-hygiene LINE sticker pack (*Don't Let Them Write Your Ending*) countering the PRC's 疑美論 ("US Abandonment") narrative. Submitted for the Politics of Truth course (Spring 2026) by Group 5. The 10× slowdown documented in this repo is part of the motivation for that pack.
+
+## License
+
+Code and analysis: MIT. Cofacts-derived data: CC BY-SA 4.0 (per upstream license). IORG taxonomy references: CC BY-SA 4.0.
