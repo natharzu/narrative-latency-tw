@@ -108,8 +108,9 @@ Three concrete moves recommended on slide 5 of the deck:
 
     # Or open the jupytext-generated notebooks
     jupyter notebook notebooks/02_latency.ipynb
+    
+    Snapshot: Hugging Face dataset `Cofacts/line-msg-fact-check-tw` as of 2026-05-10.
 
-Snapshot: Hugging Face dataset `Cofacts/line-msg-fact-check-tw` as of 2026-05-10.
 
 ## 10. Companion project
 
