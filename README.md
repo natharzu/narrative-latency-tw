@@ -52,7 +52,7 @@ Per-file retrieval notes and provenance: [`data/raw/SOURCES.md`](./data/raw/SOUR
 7. **Trend.** Median latency by year, 2018 → 2026.
 8. **Sensitivity.** Re-run 2020 vs 2024 comparison restricted to articles posted ≥6 months before the snapshot. The 10× ratio is robust to survivorship.
 
-Pipeline scripts (run in order): [`scripts/01_clean.py`](./scripts/01_clean.py) → [`scripts/02_latency.py`](./scripts/02_latency.py) → [`scripts/03_election_windows.py`](./scripts/03_election_windows.py) → [`scripts/04_final_charts.py`](./scripts/04_final_charts.py). Notebooks are generated via [jupytext](https://jupytext.readthedocs.io/) from the scripts above.
+Pipeline scripts: [`scripts/01_clean.py`](./scripts/01_clean.py) → [`scripts/02_latency.py`](./scripts/02_latency.py) → [`scripts/03_election_windows.py`](./scripts/03_election_windows.py). Notebooks are generated via [jupytext](https://jupytext.readthedocs.io/) from the scripts above.
 
 ## 5. Stakeholder
 
@@ -69,8 +69,8 @@ Three concrete moves recommended on slide 5 of the deck:
 - `data/raw/` — IORG narrative reference (cluster taxonomy)
 - `data/raw/SOURCES.md` — retrieval notes for every source
 - `data/processed/cofacts_latency.csv` (N = 68,533) and `cofacts_m4.csv`
-- `scripts/01_clean.py`, `02_latency.py`, `03_election_windows.py`, `04_final_charts.py`
-- `notebooks/01_clean.ipynb`, `02_latency.ipynb`, `03_election_windows.ipynb` (jupytext-generated)
+- `scripts/01_clean.py`, `scripts/02_latency.py`, `scripts/03_election_windows.py`, `scripts/04_final_charts.py`
+- `notebooks/01_clean.ipynb`, `02_latency.ipynb`, `03_m4.ipynb` (jupytext-generated)
 - `viz/cofacts_latency_distribution.png`, `viz/cofacts_latency_by_year.png`, `viz/election_window_comparison.png`
 - `report/slides.pdf` — 5-minute deck, 5 slides
 - `PROPOSAL.md` — full project brief with risks, milestones, and rubric mapping
@@ -103,8 +103,8 @@ Three concrete moves recommended on slide 5 of the deck:
     # Run the full pipeline
     python3 scripts/01_clean.py
     python3 scripts/02_latency.py
-    python3 scripts/03_election_windows.py
-    python3 scripts/04_final_charts.py
+    python3 scripts/analysis.py
+    python3 scripts/charts.py
 
     # Or open the jupytext-generated notebooks
     jupyter notebook notebooks/02_latency.ipynb
