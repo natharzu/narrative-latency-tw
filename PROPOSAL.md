@@ -152,8 +152,8 @@ A commit lands at every milestone exit (≥6 commits expected). Each milestone c
 - [x] Intermediate submission to Brightspace — submitted 2026-05-13 20:21 Moscow
 - [x] Cofacts pipeline producing `cofacts_latency.csv` (N=68,533)
 - [x] M4 election-window stats + cluster tagging — 10× slowdown locked
-- [ ] Generate `notebooks/01_clean.ipynb` + `02_latency.ipynb` + `03_m4.ipynb` via jupytext
-- [ ] Final `README.md` with locked headline + chart embeds
-- [ ] Build 5-slide deck → `report/slides.pdf` (Keynote → PDF)
+- [x] Generate `notebooks/01_clean.ipynb` + `02_latency.ipynb` + `03_election_windows.ipynb` via jupytext
+- [x] Final `README.md` with locked headline + chart embeds
+- [x] Build 5-slide deck → `report/slides.pdf` (Keynote → PDF)
 - [ ] Self-check against rubric on 2026-05-18
 - [ ] Final submission to Brightspace by 2026-05-20
