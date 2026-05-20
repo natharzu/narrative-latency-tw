@@ -149,7 +149,12 @@ with b:
                        ticktext=["0.1h","1h","10h","100h","1000h","10000h"])
     st.plotly_chart(fig24, use_container_width=True)
 
-st.info(f"📊 2024's median is **{ratio:.1f}×** higher than 2020's, despite both being election years. The slowdown is not driven by election volume — it's a community-capacity story.")
+st.info(
+    f"📊 **{ratio:.1f}× slower despite {(1-len(e2024)/len(e2020))*100:.0f}% LESS volume.** "
+    f"2020 window: {len(e2020):,} articles. 2024 window: {len(e2024):,}. "
+    f"With less work coming in, replies still took 10× longer — ruling out queue overload. "
+    f"The story is bilateral platform decline: fewer submitters, slower repliers."
+)
 
 # ============ HEATMAP ============
 st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)

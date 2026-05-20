@@ -119,3 +119,23 @@ Snapshot: Hugging Face dataset `Cofacts/line-msg-fact-check-tw` as of 2026-05-10
 ## License
 
 Code and analysis: MIT. Cofacts-derived data: CC BY-SA 4.0 (per upstream license). IORG taxonomy references: CC BY-SA 4.0.
+
+
+## Updated mechanism (post-submission analysis)
+
+The submitted headline (**10× slower 2024 vs 2020**) is confirmed. Hypothesis testing of four alternative drivers sharpened the mechanism:
+
+| Hypothesis | Test | Result |
+|---|---|---|
+| Volume surge in 2024 | Article counts per election window | **Rejected** — 2024 had 62% *fewer* submissions (5,798 → 2,191) |
+| Right-censoring artifact | Buffer between window end and data max | **Rejected** — 757-day buffer |
+| Article complexity shift | text_preview length | **Rejected** — medians 96 vs 82 chars |
+| Article type mix shift | articleType / replyType distributions | **Modest** — RUMOR share 52% → 69%, insufficient |
+
+**Volume went down, not up.** The 2024 election cycle saw a documented surge in Taiwan-targeted misinformation activity, yet Cofacts received less than half the rumor submissions of 2020.
+
+**Implication: bilateral platform decline, not queue overload.**
+- *Submitters left*: 62% fewer people forwarded rumors to Cofacts during a higher-stakes election cycle.
+- *Repliers slowed or left*: the smaller inflow takes 10× longer to verify.
+
+The intervention framing shifts from "more volunteers" to "why did the submission base leave between 2020 and 2024?"
