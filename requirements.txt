@@ -1,13 +1,7 @@
 pandas>=2.0
-plotly>=5.0
-jupyter
-requests>=2.31
-beautifulsoup4>=4.12
-lxml>=5.0
-requests>=2.31
-beautifulsoup4>=4.12
-lxml>=5.0
-matplotlib>=3.7
 scipy>=1.11
+matplotlib>=3.7
+numpy
+jupyter
+jupytext
 pytest
-
