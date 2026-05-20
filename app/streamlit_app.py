@@ -66,9 +66,9 @@ fig_tl.add_trace(go.Scatter(
     customdata=yearly["count"],
     hovertemplate="<b>%{x}</b><br>Median %{y:.1f}h<br>N=%{customdata:,}<extra></extra>",
 ))
-fig_tl.add_vrect(x0=2019.5, x1=2020.5, fillcolor="#10b981", opacity=0.18, line_width=0,
+fig_tl.add_vrect(x0=2019.5, x1=2020.5, fillcolor="#3b82f6", opacity=0.18, line_width=0,
                  annotation_text="2020 election", annotation_position="top left")
-fig_tl.add_vrect(x0=2023.5, x1=2024.5, fillcolor="#ef4444", opacity=0.18, line_width=0,
+fig_tl.add_vrect(x0=2023.5, x1=2024.5, fillcolor="#f59e0b", opacity=0.18, line_width=0,
                  annotation_text="2024 election", annotation_position="top left")
 fig_tl.update_layout(template=TPL, title="Median response time by year (Cofacts community)",
                      xaxis_title="Year", yaxis_title="Median latency (hours)", height=360,
@@ -128,7 +128,7 @@ st.caption("The headline finding — log-scale x-axis, same binning.")
 a, b = st.columns(2)
 with a:
     log20 = np.log10(df_2020["latency_hours"].clip(lower=0.01))
-    fig20 = px.histogram(x=log20, nbins=40, color_discrete_sequence=["#10b981"])
+    fig20 = px.histogram(x=log20, nbins=40, color_discrete_sequence=["#3b82f6"])
     fig20.update_traces(marker_line_color="white", marker_line_width=0.6)
     fig20.add_vline(x=np.log10(e2020.median()), line_dash="dash", line_color="white",
                     annotation_text=f"median {e2020.median():.1f}h", annotation_position="top right")
@@ -139,7 +139,7 @@ with a:
     st.plotly_chart(fig20, use_container_width=True)
 with b:
     log24 = np.log10(df_2024["latency_hours"].clip(lower=0.01))
-    fig24 = px.histogram(x=log24, nbins=40, color_discrete_sequence=["#ef4444"])
+    fig24 = px.histogram(x=log24, nbins=40, color_discrete_sequence=["#f59e0b"])
     fig24.update_traces(marker_line_color="white", marker_line_width=0.6)
     fig24.add_vline(x=np.log10(e2024.median()), line_dash="dash", line_color="white",
                     annotation_text=f"median {e2024.median():.1f}h", annotation_position="top right")
