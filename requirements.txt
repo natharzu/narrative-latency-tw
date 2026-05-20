@@ -9,3 +9,5 @@ beautifulsoup4>=4.12
 lxml>=5.0
 matplotlib>=3.7
 scipy>=1.11
+pytest
+
