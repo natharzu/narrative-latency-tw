@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
@@ -57,7 +58,7 @@ with h3:
     st.metric("Overall median", f"{df['latency_hours'].median():.1f} h")
 
 # Annotated timeline
-yearly = df.groupby("year").agg(median=("latency_hours", "median"), count=("latency_hours", "size")).reset_index()
+yearly = df[df["year"] >= 2018].groupby("year").agg(median=("latency_hours", "median"), count=("latency_hours", "size")).reset_index()
 fig_tl = go.Figure()
 fig_tl.add_trace(go.Scatter(
     x=yearly["year"], y=yearly["median"], mode="lines+markers",
@@ -89,12 +90,15 @@ with c1:
     st.caption(f"{missed_n:,} of {len(df):,} articles exceeded the {threshold}h window.")
 
 with c2:
-    gauge = go.Figure(go.Bar(
-        x=[pct_under, pct_over], y=["SLA"], orientation="h",
-        marker=dict(color=["#10b981", "#ef4444"]),
-        text=[f"✓ {pct_under:.1f}%", f"✗ {pct_over:.1f}%"],
-        textposition="inside", textfont=dict(size=20, color="white"), hoverinfo="skip",
-    ))
+    gauge = go.Figure()
+    gauge.add_trace(go.Bar(y=["SLA"], x=[pct_under], orientation="h",
+                            marker_color="#10b981", text=f"✓ {pct_under:.1f}%",
+                            textposition="inside", textfont=dict(size=20, color="white"),
+                            hoverinfo="skip"))
+    gauge.add_trace(go.Bar(y=["SLA"], x=[pct_over], orientation="h",
+                            marker_color="#ef4444", text=f"✗ {pct_over:.1f}%",
+                            textposition="inside", textfont=dict(size=20, color="white"),
+                            hoverinfo="skip"))
     gauge.update_layout(barmode="stack", template=TPL, height=140, showlegend=False,
                         xaxis=dict(range=[0, 100], showticklabels=False, showgrid=False),
                         yaxis=dict(showticklabels=False), margin=dict(t=10, b=10, l=10, r=10))
@@ -123,20 +127,26 @@ st.caption("The headline finding — log-scale x-axis, same binning.")
 
 a, b = st.columns(2)
 with a:
-    fig20 = px.histogram(df_2020, x="latency_hours", log_x=True, nbins=50,
-                          color_discrete_sequence=["#10b981"])
-    fig20.add_vline(x=e2020.median(), line_dash="dash", line_color="white",
+    log20 = np.log10(df_2020["latency_hours"].clip(lower=0.01))
+    fig20 = px.histogram(x=log20, nbins=40, color_discrete_sequence=["#10b981"])
+    fig20.update_traces(marker_line_color="white", marker_line_width=0.6)
+    fig20.add_vline(x=np.log10(e2020.median()), line_dash="dash", line_color="white",
                     annotation_text=f"median {e2020.median():.1f}h", annotation_position="top right")
     fig20.update_layout(template=TPL, title=f"2020 election window — N={len(e2020):,}", height=340,
-                         xaxis_title="Latency (hours, log)", margin=dict(t=50, b=40))
+                         margin=dict(t=50, b=40), showlegend=False)
+    fig20.update_xaxes(title="Latency (hours)", tickvals=[-1,0,1,2,3,4],
+                       ticktext=["0.1h","1h","10h","100h","1000h","10000h"])
     st.plotly_chart(fig20, use_container_width=True)
 with b:
-    fig24 = px.histogram(df_2024, x="latency_hours", log_x=True, nbins=50,
-                          color_discrete_sequence=["#ef4444"])
-    fig24.add_vline(x=e2024.median(), line_dash="dash", line_color="white",
+    log24 = np.log10(df_2024["latency_hours"].clip(lower=0.01))
+    fig24 = px.histogram(x=log24, nbins=40, color_discrete_sequence=["#ef4444"])
+    fig24.update_traces(marker_line_color="white", marker_line_width=0.6)
+    fig24.add_vline(x=np.log10(e2024.median()), line_dash="dash", line_color="white",
                     annotation_text=f"median {e2024.median():.1f}h", annotation_position="top right")
     fig24.update_layout(template=TPL, title=f"2024 election window — N={len(e2024):,}", height=340,
-                         xaxis_title="Latency (hours, log)", margin=dict(t=50, b=40))
+                         margin=dict(t=50, b=40), showlegend=False)
+    fig24.update_xaxes(title="Latency (hours)", tickvals=[-1,0,1,2,3,4],
+                       ticktext=["0.1h","1h","10h","100h","1000h","10000h"])
     st.plotly_chart(fig24, use_container_width=True)
 
 st.info(f"📊 2024's median is **{ratio:.1f}×** higher than 2020's, despite both being election years. The slowdown is not driven by election volume — it's a community-capacity story.")
@@ -158,6 +168,7 @@ fig_heat = px.imshow(heat, color_continuous_scale="Inferno", aspect="auto",
 fig_heat.update_layout(template=TPL, height=340, title="Article submission volume",
                        margin=dict(t=50, b=40))
 st.plotly_chart(fig_heat, use_container_width=True)
+st.caption("Volume concentrates in weekday evenings (Taipei time) — Cofacts community capacity needs to match that pattern.")
 
 # ============ PERCENTILE DRILL-DOWN ============
 st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
