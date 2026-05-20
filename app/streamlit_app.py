@@ -149,19 +149,32 @@ with b:
                        ticktext=["0.1h","1h","10h","100h","1000h","10000h"])
     st.plotly_chart(fig24, use_container_width=True)
 
-st.markdown("#### The volume paradox")
-m1, m2, m3, m4 = st.columns(4)
-with m1:
-    st.metric("2020 submissions", f"{len(e2020):,}")
-with m2:
-    st.metric("2024 submissions", f"{len(e2024):,}",
-              delta=f"{(len(e2024)/len(e2020)-1)*100:.0f}%", delta_color="normal")
-with m3:
-    st.metric("2020 median latency", f"{e2020.median():.1f}h")
-with m4:
-    st.metric("2024 median latency", f"{e2024.median():.1f}h",
-              delta=f"+{ratio-1:.1f}×", delta_color="inverse")
-st.caption("Less work came in — yet response time climbed. Volume doesn't explain the slowdown.")
+st.markdown("### The volume paradox")
+p1, p2 = st.columns(2)
+with p1:
+    st.markdown(
+        f"""<div style="text-align:center; padding: 24px; background: #fef2f2; border-radius: 12px; border-left: 6px solid #ef4444;">
+        <div style="font-size: 72px; font-weight: 800; color: #ef4444; line-height: 1;">−62%</div>
+        <div style="font-size: 14px; color: #64748b; margin-top: 10px; text-transform: uppercase; letter-spacing: 0.5px;">submissions in 2024 vs 2020</div>
+        <div style="font-size: 20px; color: #1e293b; margin-top: 10px; font-weight: 600;">{len(e2020):,} → {len(e2024):,} articles</div>
+        </div>""",
+        unsafe_allow_html=True,
+    )
+with p2:
+    st.markdown(
+        f"""<div style="text-align:center; padding: 24px; background: #fef2f2; border-radius: 12px; border-left: 6px solid #ef4444;">
+        <div style="font-size: 72px; font-weight: 800; color: #ef4444; line-height: 1;">+{ratio-1:.1f}×</div>
+        <div style="font-size: 14px; color: #64748b; margin-top: 10px; text-transform: uppercase; letter-spacing: 0.5px;">median reply latency 2024 vs 2020</div>
+        <div style="font-size: 20px; color: #1e293b; margin-top: 10px; font-weight: 600;">{e2020.median():.1f}h → {e2024.median():.1f}h</div>
+        </div>""",
+        unsafe_allow_html=True,
+    )
+st.markdown(
+    """<div style="text-align:center; margin: 20px 0 8px 0; padding: 16px; background: #f8fafc; border-radius: 8px; font-size: 17px; color: #1e293b;">
+    <strong>Less work came in — yet replies got dramatically slower.</strong> Volume cannot explain the slowdown.
+    </div>""",
+    unsafe_allow_html=True,
+)
 
 st.info(
     f"📊 **{ratio:.1f}× slower despite {(1-len(e2024)/len(e2020))*100:.0f}% LESS volume.** "
