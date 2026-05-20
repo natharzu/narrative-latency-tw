@@ -98,13 +98,15 @@ Three concrete moves recommended on slide 5 of the deck:
 
     git clone https://github.com/natharzu/narrative-latency-tw.git
     cd narrative-latency-tw
-    python3 -m pip install --user -r requirements.txt
+    python3 -m pip install -r requirements.txt
+
 
     # Run the full pipeline
     python3 scripts/01_clean.py
     python3 scripts/02_latency.py
     python3 scripts/03_election_windows.py
     python3 scripts/04_final_charts.py
+    
 
     # Or open the jupytext-generated notebooks
     jupyter notebook notebooks/02_latency.ipynb
