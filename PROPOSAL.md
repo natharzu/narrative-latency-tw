@@ -4,7 +4,7 @@
 
 **Stakeholder.** Cofacts and IORG response teams.
 
-**Headline (locked).** *"Between Taiwan's 2020 and 2024 presidential elections, Cofacts' community fact-check response slowed 10× — from a median of 6.7 hours in the 2020 window to 67.2 hours in the 2024 window."* (N = 5,798 vs 2,200; Mann–Whitney one-sided p < 10⁻²⁰⁰; survivorship-robust: 10.0× ratio holds when restricted to articles posted ≥6 months before snapshot.) **Baseline:** overall median 21.2h, N=68,533, 2016–2026.
+**Headline (locked).** *"Between Taiwan's 2020 and 2024 presidential elections, Cofacts' community fact-check response slowed 10× — from a median of 6.7 hours in the 2020 window to 67.2 hours in the 2024 window."* (N = 5,798 vs 2,191; Mann–Whitney one-sided p < 10⁻²⁰⁰; survivorship-robust: 10.0× ratio holds when restricted to articles posted ≥6 months before snapshot.) **Baseline:** overall median 21.2h, N=68,533, 2016–2026.
 
 ---
 
@@ -120,7 +120,7 @@ A commit lands at every milestone exit (≥6 commits expected). Each milestone c
 1. **Hook.** Title + giant `10×` + stakeholder name.
 2. **Why it matters.** Latency = response window; current public view is artifact-level, not temporal.
 3. **Method.** Cofacts article + reply timeline + facts table.
-4. **Finding.** Side-by-side histogram — 2020 window (N=5,825, median 6.7h) vs 2024 window (N=2,200, median 67.2h). Annotated with 10× ratio, p < 10⁻²⁰⁰, and survivorship-robust note. Inset shows election windows are faster than baseline overall.
+4. **Finding.** Side-by-side histogram — 2020 window (N=5,825, median 6.7h) vs 2024 window (N=2,191, median 67.2h). Annotated with 10× ratio, p < 10⁻²⁰⁰, and survivorship-robust note. Inset shows election windows are faster than baseline overall.
 5. **So what.** Three concrete moves for Cofacts / IORG: editor recruitment, AI-assisted triage, public latency dashboard.
 
 **Audience-fit note.** The deck reads standalone (PDF only). Charts exported to `viz/` as PNG so non-coders in the showcase audience can inspect them without running Python.
