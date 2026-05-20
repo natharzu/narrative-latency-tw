@@ -120,7 +120,7 @@ A commit lands at every milestone exit (≥6 commits expected). Each milestone c
 1. **Hook.** Title + giant `10×` + stakeholder name.
 2. **Why it matters.** Latency = response window; current public view is artifact-level, not temporal.
 3. **Method.** Cofacts article + reply timeline + facts table.
-4. **Finding.** Side-by-side histogram — 2020 window (N=5,825, median 6.7h) vs 2024 window (N=2,191, median 67.2h). Annotated with 10× ratio, p < 10⁻²⁰⁰, and survivorship-robust note. Inset shows election windows are faster than baseline overall.
+4. **Finding.** Side-by-side histogram — 2020 window (N=5,798, median 6.7h) vs 2024 window (N=2,191, median 67.2h). Annotated with 10× ratio, p < 10⁻²⁰⁰, and survivorship-robust note. Inset shows election windows are faster than baseline overall.
 5. **So what.** Three concrete moves for Cofacts / IORG: editor recruitment, AI-assisted triage, public latency dashboard.
 
 **Audience-fit note.** The deck reads standalone (PDF only). Charts exported to `viz/` as PNG so non-coders in the showcase audience can inspect them without running Python.
