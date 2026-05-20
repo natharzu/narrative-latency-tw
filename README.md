@@ -11,7 +11,7 @@ Author: Natalia Harzu
 
 > **Between Taiwan's 2020 and 2024 presidential elections, Cofacts' community fact-check response slowed 10× — from a median of 6.7 hours in the 2020 window to 67.2 hours in the 2024 window.**
 
-N = 5,825 (2020 window) vs N = 2,200 (2024 window) · Mann–Whitney U, one-sided p < 10⁻²⁰⁰ · Survivorship-robust: the 10.0× ratio holds when restricted to articles posted ≥6 months before the snapshot.
+N = 5,798 (2020 window) vs N = 2,191 (2024 window) · Mann–Whitney U, one-sided p < 10⁻²⁰⁰ · Survivorship-robust: the 10.0× ratio holds when restricted to articles posted ≥6 months before the snapshot.
 
 Baseline: overall median 21.2 h across N = 68,533 article-reply pairs, 2016–2026. Snapshot date: 2026-05-10.
 

@@ -4,7 +4,7 @@
 
 **Stakeholder.** Cofacts and IORG response teams.
 
-**Headline (locked).** *"Between Taiwan's 2020 and 2024 presidential elections, Cofacts' community fact-check response slowed 10× — from a median of 6.7 hours in the 2020 window to 67.2 hours in the 2024 window."* (N = 5,825 vs 2,200; Mann–Whitney one-sided p < 10⁻²⁰⁰; survivorship-robust: 10.0× ratio holds when restricted to articles posted ≥6 months before snapshot.) **Baseline:** overall median 21.2h, N=68,533, 2016–2026.
+**Headline (locked).** *"Between Taiwan's 2020 and 2024 presidential elections, Cofacts' community fact-check response slowed 10× — from a median of 6.7 hours in the 2020 window to 67.2 hours in the 2024 window."* (N = 5,798 vs 2,200; Mann–Whitney one-sided p < 10⁻²⁰⁰; survivorship-robust: 10.0× ratio holds when restricted to articles posted ≥6 months before snapshot.) **Baseline:** overall median 21.2h, N=68,533, 2016–2026.
 
 ---
 
