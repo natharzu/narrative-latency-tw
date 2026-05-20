@@ -6,7 +6,7 @@ Run:
     python3 scripts/m5_charts.py
 
 Inputs:
-    data/processed/cofacts_election_windows.csv   (from m4_analysis.py)
+    data/processed/cofacts_election_windows.csv   (from 03_election_windows.py)
 
 Outputs (overwrites):
     viz/cofacts_latency_distribution.png   — log x + 1d/3d/1w markers

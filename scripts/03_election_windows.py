@@ -1,5 +1,5 @@
 """
-M4 analysis — election-window comparison, cluster tagging, survivorship sensitivity.
+Analysis: election-window comparison, cluster tagging, survivorship sensitivity.
 
 Inputs:  data/processed/cofacts_latency.csv
 Outputs: data/processed/cofacts_election_windows.csv (adds election_window + topic_cluster)
