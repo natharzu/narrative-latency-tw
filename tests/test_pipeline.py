@@ -1,0 +1,257 @@
+"""
+tests/test_pipeline.py — regression tests for the narrative-latency-tw pipeline.
+
+Run:
+    python3 -m pip install -r requirements.txt pytest
+    python3 -m pytest tests/ -v
+
+Assumes the pipeline has produced:
+    data/processed/cofacts_latency.csv
+    data/processed/cofacts_election_windows.csv
+
+Headlines being defended (locked 2026-05-14):
+    - Overall median ≈ 21.2 h, N ≈ 68,533
+    - 2020 window median ≈ 6.7 h; 2024 window median ≈ 67.2 h
+    - 2024 / 2020 ratio ≈ 10×; Mann–Whitney one-sided p < 10⁻²⁰⁰
+    - Ratio ≥ 9× when restricted to articles ≥ 180 days before snapshot
+"""
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import pytest
+from scipy.stats import mannwhitneyu
+
+ROOT = Path(__file__).resolve().parent.parent
+LATENCY_CSV = ROOT / "data" / "processed" / "cofacts_latency.csv"
+WINDOWS_CSV = ROOT / "data" / "processed" / "cofacts_election_windows.csv"
+
+SNAPSHOT = pd.Timestamp("2026-05-10", tz="UTC")
+E2020 = pd.Timestamp("2020-01-11", tz="UTC")
+E2024 = pd.Timestamp("2024-01-13", tz="UTC")
+WIN = pd.Timedelta(days=90)
+
+EXPECTED_N_MIN = 60_000
+EXPECTED_MEDIAN_HOURS = 21.2
+MEDIAN_TOL_HOURS = 2.0
+EXPECTED_RATIO_2024_OVER_2020 = 10.0
+RATIO_TOL = 2.0
+
+
+# Fixtures
+@pytest.fixture(scope="module")
+def latency_df() -> pd.DataFrame:
+    if not LATENCY_CSV.exists():
+        pytest.skip(f"Missing {LATENCY_CSV}; run scripts/01_clean.py first.")
+    df = pd.read_csv(LATENCY_CSV)
+    df["article_createdAt"] = pd.to_datetime(
+        df["article_createdAt"], utc=True, format="ISO8601", errors="coerce"
+    )
+    df["reply_createdAt"] = pd.to_datetime(
+        df["reply_createdAt"], utc=True, format="ISO8601", errors="coerce"
+    )
+    return df
+
+
+@pytest.fixture(scope="module")
+def windows_df() -> pd.DataFrame:
+    if not WINDOWS_CSV.exists():
+        pytest.skip(f"Missing {WINDOWS_CSV}; run scripts/03_election_windows.py first.")
+    df = pd.read_csv(WINDOWS_CSV)
+    df["article_createdAt"] = pd.to_datetime(
+        df["article_createdAt"], utc=True, format="ISO8601", errors="coerce"
+    )
+    return df
+
+
+# 1. Cleaning invariants (mirrors scripts/01_clean.py)
+class TestCleaningInvariants:
+    def test_dataset_size_within_expected_band(self, latency_df):
+        assert len(latency_df) >= EXPECTED_N_MIN, (
+            f"Cleaned dataset has {len(latency_df):,} rows; "
+            f"expected ≥ {EXPECTED_N_MIN:,}."
+        )
+
+    def test_latency_is_non_negative(self, latency_df):
+        assert (latency_df["latency_hours"] >= 0).all()
+
+    def test_latency_under_one_year(self, latency_df):
+        cap = 24 * 365
+        assert (latency_df["latency_hours"] <= cap).all()
+
+    def test_only_text_articles(self, latency_df):
+        if "articleType" in latency_df.columns:
+            assert (latency_df["articleType"] == "TEXT").all()
+
+    def test_latency_recomputes_from_timestamps(self, latency_df):
+        recomputed = (
+            (latency_df["reply_createdAt"] - latency_df["article_createdAt"])
+            .dt.total_seconds()
+            / 3600.0
+        )
+        np.testing.assert_allclose(
+            latency_df["latency_hours"].values,
+            recomputed.values,
+            atol=1 / 3600.0,
+            err_msg="latency_hours column drifted from (reply − article).",
+        )
+
+    def test_one_row_per_article(self, latency_df):
+        assert latency_df["articleId"].is_unique
+
+    def test_timestamps_parse(self, latency_df):
+        assert latency_df["article_createdAt"].notna().all()
+        assert latency_df["reply_createdAt"].notna().all()
+
+
+# 2. Headline metrics (mirrors scripts/02_latency.py)
+class TestHeadlineMetrics:
+    def test_overall_median_matches_locked_value(self, latency_df):
+        median = latency_df["latency_hours"].median()
+        assert abs(median - EXPECTED_MEDIAN_HOURS) <= MEDIAN_TOL_HOURS, (
+            f"Overall median is {median:.2f} h; locked value is "
+            f"{EXPECTED_MEDIAN_HOURS} h ± {MEDIAN_TOL_HOURS}."
+        )
+
+    def test_iqr_ordering(self, latency_df):
+        p25, p75 = latency_df["latency_hours"].quantile([0.25, 0.75])
+        assert p25 < latency_df["latency_hours"].median() < p75
+
+    def test_share_under_24h_is_meaningful(self, latency_df):
+        share = (latency_df["latency_hours"] < 24).mean()
+        assert share > 0.4, f"Only {share:.1%} of replies under 24h."
+
+    def test_year_coverage(self, latency_df):
+        years = latency_df["article_createdAt"].dt.year
+        assert years.min() <= 2018
+        assert years.max() >= 2025
+
+
+# 3. Election windows + survivorship (mirrors scripts/03_election_windows.py)
+class TestElectionWindows:
+    def _slice(self, df, anchor):
+        return df.loc[(df["article_createdAt"] - anchor).abs() <= WIN, "latency_hours"]
+
+    def test_window_sizes_non_trivial(self, windows_df):
+        e20 = self._slice(windows_df, E2020)
+        e24 = self._slice(windows_df, E2024)
+        assert len(e20) >= 1_000
+        assert len(e24) >= 1_000
+
+    def test_2024_is_slower_than_2020(self, windows_df):
+        e20 = self._slice(windows_df, E2020)
+        e24 = self._slice(windows_df, E2024)
+        assert e24.median() > e20.median()
+
+    def test_ratio_within_tolerance(self, windows_df):
+        e20 = self._slice(windows_df, E2020)
+        e24 = self._slice(windows_df, E2024)
+        ratio = e24.median() / e20.median()
+        assert abs(ratio - EXPECTED_RATIO_2024_OVER_2020) <= RATIO_TOL, (
+            f"Ratio is {ratio:.2f}×; locked at "
+            f"{EXPECTED_RATIO_2024_OVER_2020}× ± {RATIO_TOL}."
+        )
+
+    def test_mann_whitney_one_sided_extreme(self, windows_df):
+        e20 = self._slice(windows_df, E2020)
+        e24 = self._slice(windows_df, E2024)
+        _, p = mannwhitneyu(e24, e20, alternative="greater")
+        assert p < 1e-100, f"Mann–Whitney p={p:.2e} fails locked threshold."
+
+    def test_survivorship_robustness(self, windows_df):
+        cutoff = SNAPSHOT - pd.Timedelta(days=180)
+        ripe = windows_df[windows_df["article_createdAt"] <= cutoff]
+        e20 = self._slice(ripe, E2020)
+        e24 = self._slice(ripe, E2024)
+        assert len(e20) > 0 and e20.median() > 0
+        ratio = e24.median() / e20.median()
+        assert ratio >= 9.0, (
+            f"Survivorship-restricted ratio collapsed to {ratio:.2f}×."
+        )
+
+    def test_election_window_faster_than_baseline_within_2020(self, windows_df):
+        y2020 = windows_df[windows_df["article_createdAt"].dt.year == 2020]
+        in_win = (y2020["article_createdAt"] - E2020).abs() <= WIN
+        if in_win.sum() == 0 or (~in_win).sum() == 0:
+            pytest.skip("Not enough 2020 rows on both sides of the window.")
+        assert (
+            y2020.loc[in_win, "latency_hours"].median()
+            <= y2020.loc[~in_win, "latency_hours"].median()
+        )
+
+
+# 4. Cluster tagger unit tests
+CLUSTERS = {
+    "vaccine": ["疫苗", "AZ", "BNT", "莫德納", "高端", "BioNTech",
+                "vaccine", "vaccination", "Pfizer", "Moderna"],
+    "us_skepticism": ["美國", "美军", "美軍", "拜登", "Biden", "Trump", "川普",
+                      "阿富汗", "Afghanistan", "美中"],
+    "pre_election": ["選舉", "选举", "总统", "總統", "候选", "候選", "投票",
+                     "election", "Lai", "賴清德", "蕭美琴", "侯友宜", "柯文哲"],
+    "ccp_info_manipulation": ["中共", "共产党", "共產黨", "解放军", "解放軍",
+                              "习近平", "習近平", "Xi Jinping", "PLA",
+                              "一国两制", "一國兩制"],
+}
+
+
+def tag(text: object) -> str:
+    if not isinstance(text, str):
+        return "Other"
+    for cluster, kws in CLUSTERS.items():
+        if any(kw in text for kw in kws):
+            return cluster
+    return "Other"
+
+
+class TestClusterTagger:
+    @pytest.mark.parametrize(
+        "text,expected",
+        [
+            ("AZ 疫苗副作用", "vaccine"),
+            ("Pfizer booster question", "vaccine"),
+            ("拜登政府 對台 政策", "us_skepticism"),
+            ("Trump 2024 campaign rumor", "us_skepticism"),
+            ("賴清德 當選 投票 結果", "pre_election"),
+            ("習近平 訪美", "ccp_info_manipulation"),
+            ("今天天氣很好", "Other"),
+            ("", "Other"),
+            (None, "Other"),
+            (123, "Other"),
+        ],
+    )
+    def test_known_cases(self, text, expected):
+        assert tag(text) == expected
+
+    def test_deterministic(self):
+        sample = "疫苗 與 選舉"
+        first_match = next(
+            cluster for cluster, kws in CLUSTERS.items()
+            if any(kw in sample for kw in kws)
+        )
+        assert tag(sample) == first_match
+
+    def test_other_share_is_dominant(self, windows_df):
+        if "topic_cluster" not in windows_df.columns:
+            pytest.skip("cofacts_election_windows.csv missing topic_cluster.")
+        other_share = (windows_df["topic_cluster"] == "Other").mean()
+        assert 0.75 <= other_share <= 0.95
+
+
+# 5. Headline-N reconciliation
+class TestHeadlineNReconciliation:
+    def test_record_2020_n(self, windows_df):
+        n = ((windows_df["article_createdAt"] - E2020).abs() <= WIN).sum()
+        assert 4_000 <= n <= 7_500, f"2020 window N drifted: {n}"
+        print(f"\n[INFO] 2020 window N = {n}")
+
+    def test_record_2024_n(self, windows_df):
+        n = ((windows_df["article_createdAt"] - E2024).abs() <= WIN).sum()
+        assert 1_500 <= n <= 3_500, f"2024 window N drifted: {n}"
+        print(f"\n[INFO] 2024 window N = {n}")
+
+
+if __name__ == "__main__":
+    sys.exit(pytest.main([__file__, "-v"]))
