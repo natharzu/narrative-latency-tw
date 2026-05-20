@@ -40,6 +40,7 @@ df_2024 = df[(df["article_createdAt"] >= _e2024 - _win) & (df["article_createdAt
 e2020 = df_2020["latency_hours"]
 e2024 = df_2024["latency_hours"]
 ratio = e2024.median() / e2020.median()
+assert abs(ratio - 10.0) < 0.5, f'Headline ratio drifted: {ratio:.2f}× (expected ~10.0×)'
 u_stat, p_val = mannwhitneyu(e2024, e2020, alternative="greater")
 
 h1, h2, h3 = st.columns([2, 1, 1])
@@ -163,7 +164,7 @@ with p1:
 with p2:
     st.markdown(
         f"""<div style="text-align:center; padding: 24px; background: #fef2f2; border-radius: 12px; border-left: 6px solid #ef4444;">
-        <div style="font-size: 72px; font-weight: 800; color: #ef4444; line-height: 1;">+{ratio-1:.1f}×</div>
+        <div style="font-size: 72px; font-weight: 800; color: #ef4444; line-height: 1;">{ratio:.1f}×</div>
         <div style="font-size: 14px; color: #64748b; margin-top: 10px; text-transform: uppercase; letter-spacing: 0.5px;">median reply latency 2024 vs 2020</div>
         <div style="font-size: 20px; color: #1e293b; margin-top: 10px; font-weight: 600;">{e2020.median():.1f}h → {e2024.median():.1f}h</div>
         </div>""",
