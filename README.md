@@ -27,7 +27,7 @@ The four-stage upstream pipeline (PRC state media → content farms → Want-Wan
 
 ## 2. Research questions
 
-1. **Primary.** What is the distribution of *article → first community fact-check reply* latency across Cofacts' Taiwan LINE rumor archive (HF snapshot 2026-05-10), and how does it vary by topic cluster (IORG-derived taxonomy)?
+1. **Primary.** What is the distribution of *article → first community fact-check reply* latency across Cofacts' Taiwan LINE rumor archive (HF snapshot 2026-05-10)?
 2. **Secondary A.** Are rumors from election-period months (±90 days around 2020 / 2024 national elections) debunked faster or slower than the non-election baseline?
 3. **Secondary B.** How has community response latency evolved year-over-year (2018 → 2026), and what does the trend suggest about Cofacts' capacity?
 
