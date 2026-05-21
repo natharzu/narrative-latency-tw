@@ -16,6 +16,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.rcParams['font.sans-serif'] = ['Arial Unicode MS', 'Heiti TC', 'PingFang TC', 'sans-serif']
+matplotlib.rcParams['axes.unicode_minus'] = False
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "data" / "processed" / "cofacts_latency.csv"
