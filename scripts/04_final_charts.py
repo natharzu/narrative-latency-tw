@@ -34,15 +34,11 @@ df["year"] = df["article_createdAt"].dt.year
 ELECTIONS = {"2020": pd.Timestamp("2020-01-11"), "2024": pd.Timestamp("2024-01-13")}
 WINDOW_DAYS = 90
 
-def election_label(dt):
-    for year, e_dt in ELECTIONS.items():
-        if abs((dt - e_dt).days) <= WINDOW_DAYS:
-            return year
-    return None
-
-df["e_window"] = df["article_createdAt"].apply(election_label)
-e2020 = df.loc[df["e_window"] == "2020", "latency_hours"]
-e2024 = df.loc[df["e_window"] == "2024", "latency_hours"]
+WIN = pd.Timedelta(days=90)
+E2020 = pd.Timestamp("2020-01-11")
+E2024 = pd.Timestamp("2024-01-13")
+e2020 = df.loc[(df["article_createdAt"] - E2020).abs() <= WIN, "latency_hours"]
+e2024 = df.loc[(df["article_createdAt"] - E2024).abs() <= WIN, "latency_hours"]
 
 BLUE, RED, GRAY = "#2A6FB0", "#C0392B", "#7F8C8D"
 
@@ -141,7 +137,7 @@ print("\nGolden-Hour milestones (all-years baseline, N=68,533):")
 for h in [6, 12, 24, 48, 72, 168]:
     pct = (df["latency_hours"] <= h).mean() * 100
     print(f"  by {h:>4}h ({h/24:>4.1f}d): {pct:5.1f}% of rumors addressed")
-print("\nGolden-Hour milestones (2024 election ±90d, N=2,191):")
+print(f"\nGolden-Hour milestones (2024 election ±90d, N={len(e2024):,}):")
 for h in [6, 12, 24, 48, 72, 168]:
     pct = (e2024 <= h).mean() * 100
     print(f"  by {h:>4}h ({h/24:>4.1f}d): {pct:5.1f}% of rumors addressed")
