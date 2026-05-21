@@ -217,6 +217,90 @@ fig_p.update_layout(template=TPL, title=f"P{p_pick} response time by year", heig
                     margin=dict(t=50, b=40), coloraxis_showscale=False)
 st.plotly_chart(fig_p, use_container_width=True)
 
+# ============ CLUSTER ANALYSIS ============
+st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+st.markdown("## 🧬 Cluster analysis — what slowed down?")
+st.caption("Articles clustered by semantic embedding (sentence-transformers + HDBSCAN). "
+           "121 global clusters across 2020 + 2024; 30 distinct clusters in the 2024 election window.")
+
+# 1. UMAP hero image
+st.image(
+    "viz/clusters_umap.png",
+    caption="Global cluster map — 2D UMAP projection of article embeddings, colored by HDBSCAN cluster.",
+    use_container_width=True,
+)
+
+# 2. Cluster profiles table (global, top 40 by size)
+st.markdown("### 📋 Cluster profiles — global")
+st.caption(
+    "All clusters ranked by size. The `median_latency_h` column reveals which narratives drag the average — "
+    "scam clusters dominate the slow tail."
+)
+
+cp = (
+    pd.read_csv("data/processed/cluster_profiles.csv")
+    .sort_values("size", ascending=False)
+    .head(40)
+)
+st.dataframe(
+    cp,
+    column_config={
+        "cluster_id": st.column_config.NumberColumn("ID", width="small"),
+        "label": st.column_config.TextColumn("Top terms", width="large"),
+        "size": st.column_config.NumberColumn("Size", format="%d"),
+        "median_latency_h": st.column_config.NumberColumn("Median latency (h)", format="%.1f"),
+        "pct_2020_win": st.column_config.NumberColumn("% of 2020 win", format="%.1f%%"),
+        "pct_2024_win": st.column_config.NumberColumn("% of 2024 win", format="%.1f%%"),
+    },
+    hide_index=True,
+    use_container_width=True,
+    height=420,
+)
+
+# 3. 2024 slowest narratives bar chart
+st.markdown("### ⚠️ 2024 election window — slowest narratives")
+st.caption(
+    "Within the 2024 ±90-day window, these clusters had the highest median latency. "
+    "Scam narratives dominate — confirming the scam-driven slowdown."
+)
+
+cp24 = (
+    pd.read_csv("data/processed/cluster_profiles_2024.csv")
+    .sort_values("median_h", ascending=False)
+    .head(15)
+)
+fig_c = px.bar(
+    cp24,
+    x="median_h",
+    y=cp24["c24"].astype(str),
+    orientation="h",
+    color="dominant_topic",
+    hover_data=["top_terms", "size", "pct_of_2024_win"],
+    labels={"median_h": "Median latency (hours)", "y": "Cluster ID"},
+    color_discrete_map={
+        "scam": "#ef4444",
+        "political": "#3b82f6",
+        "health": "#10b981",
+        "other": "#94a3b8",
+    },
+)
+fig_c.update_layout(
+    template=TPL,
+    height=480,
+    title="15 slowest clusters in the 2024 window",
+    margin=dict(t=50, b=40),
+    yaxis=dict(autorange="reversed"),
+    legend_title_text="Topic",
+)
+st.plotly_chart(fig_c, use_container_width=True)
+
+# 4. Annotated slow-clusters static image
+st.image(
+    "viz/clusters_slow.png",
+    caption="Annotated UMAP — slowest 2024-window clusters highlighted.",
+    use_container_width=True,
+)
+
 # ============ Caveats ============
 with st.expander("📋 Methodology + caveats"):
     st.markdown("""
