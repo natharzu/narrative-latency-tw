@@ -317,13 +317,7 @@ st.image(
     use_container_width=True,
 )
 
-# ----- 4. Annotated slow-clusters static image (English labels)
-st.image(
-    "viz/clusters_slow.png",
-    caption="Slowest 2024-window clusters annotated by English category. "
-            "Background: all 2024-window articles in UMAP 2D space.",
-    use_container_width=True,
-)
+
 
 # ============ Caveats ============
 with st.expander("📋 Methodology + caveats"):
