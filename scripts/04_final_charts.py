@@ -141,3 +141,50 @@ print(f"\nGolden-Hour milestones (2024 election ±90d, N={len(e2024):,}):")
 for h in [6, 12, 24, 48, 72, 168]:
     pct = (e2024 <= h).mean() * 100
     print(f"  by {h:>4}h ({h/24:>4.1f}d): {pct:5.1f}% of rumors addressed")
+
+# ---------- election windows: overlay on log-x ----------
+import numpy as np
+BLUE_OVR, AMBER_OVR = "#3b82f6", "#f59e0b"
+
+e2020_log = np.log10(e2020.clip(lower=0.01))
+e2024_log = np.log10(e2024.clip(lower=0.01))
+
+fig, ax = plt.subplots(figsize=(10, 5.5))
+ax.hist(e2020_log, bins=40, alpha=0.65, color=BLUE_OVR,
+        edgecolor="white", linewidth=0.6,
+        label=f"2020 election ±90d  (N={len(e2020):,}, median {e2020.median():.1f}h)")
+ax.hist(e2024_log, bins=40, alpha=0.65, color=AMBER_OVR,
+        edgecolor="white", linewidth=0.6,
+        label=f"2024 election ±90d  (N={len(e2024):,}, median {e2024.median():.1f}h)")
+
+m2020 = np.log10(e2020.median())
+m2024 = np.log10(e2024.median())
+ax.axvline(m2020, color=BLUE_OVR, linestyle="--", linewidth=1.5)
+ax.axvline(m2024, color=AMBER_OVR, linestyle="--", linewidth=1.5)
+
+ymax = ax.get_ylim()[1] * 1.18
+ax.set_ylim(0, ymax)
+arrow_y = ymax * 0.92
+ax.annotate("", xy=(m2024, arrow_y), xytext=(m2020, arrow_y),
+            arrowprops=dict(arrowstyle="->", color="#1e293b", lw=2.2))
+ratio = e2024.median() / e2020.median()
+ax.text((m2020 + m2024) / 2, arrow_y * 1.05,
+        f"{ratio:.1f}× slower",
+        ha="center", fontsize=14, fontweight="bold", color="#1e293b")
+
+ax.set_xticks([-1, 0, 1, 2, 3, 4])
+ax.set_xticklabels(["0.1h", "1h", "10h", "100h", "1,000h", "10,000h"])
+ax.set_xlabel("response latency (log scale)", fontsize=11)
+ax.set_ylabel("number of article-reply pairs", fontsize=11)
+ax.set_title("Cofacts response latency: 2020 vs 2024 election windows\n"
+             "Mann–Whitney one-sided p < 10⁻²⁰⁰",
+             fontsize=13, fontweight="bold")
+ax.legend(loc="upper left", framealpha=0.95)
+ax.spines[["top", "right"]].set_visible(False)
+ax.grid(axis="y", alpha=0.3)
+
+plt.tight_layout()
+plt.savefig("viz/election_window_overlay.png", dpi=150, bbox_inches="tight")
+plt.close()
+print("OK viz/election_window_overlay.png")
+
