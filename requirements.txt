@@ -1,7 +1,14 @@
+# Pipeline
 pandas>=2.0
 scipy>=1.11
 matplotlib>=3.7
 numpy
+
+# App (Streamlit Cloud)
+streamlit>=1.30
+plotly>=5.18
+
+# Dev
 jupyter
 jupytext
 pytest
