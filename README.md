@@ -2,6 +2,9 @@
 
 ### How fast does Taiwan's community fact-check its own LINE rumors — and how has that speed changed across election cycles?
 
+[![Live demo](https://img.shields.io/badge/%F0%9F%8C%B6%EF%B8%8F_Live_demo-streamlit-ef4444?logo=streamlit&logoColor=white)](https://narrative-latency-tw.streamlit.app/)
+
+
 **Capstone — Practical Data Analysis**
 Author: Natalia Harzu
 
