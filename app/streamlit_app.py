@@ -220,84 +220,108 @@ st.plotly_chart(fig_p, use_container_width=True)
 # ============ CLUSTER ANALYSIS ============
 st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 st.markdown("## 🧬 Cluster analysis — what slowed down?")
-st.caption("Articles clustered by semantic embedding (sentence-transformers + HDBSCAN). "
-           "121 global clusters across 2020 + 2024; 30 distinct clusters in the 2024 election window.")
+st.caption(
+    "Articles clustered by semantic embedding (sentence-transformers + HDBSCAN). "
+    "Mandarin keyword lists translated to English category labels for readability."
+)
 
-# 1. UMAP hero image
+# Load enriched cluster data
+cp = pd.read_csv("data/processed/cluster_profiles.csv")
+cp24 = pd.read_csv("data/processed/cluster_profiles_2024.csv")
+
+# ----- KPI row
+k1, k2, k3 = st.columns(3)
+k1.metric("Global clusters", f"{len(cp)}")
+k2.metric("Clusters in 2024 window", f"{len(cp24)}")
+scam_share = cp24.loc[cp24["dominant_topic"] == "scam", "pct_of_2024_win"].sum()
+k3.metric("Scam share of 2024 window", f"{scam_share:.1f}%")
+
+# ----- 1. UMAP hero image
 st.image(
     "viz/clusters_umap.png",
     caption="Global cluster map — 2D UMAP projection of article embeddings, colored by HDBSCAN cluster.",
     use_container_width=True,
 )
 
-# 2. Cluster profiles table (global, top 40 by size)
-st.markdown("### 📋 Cluster profiles — global")
+# ----- 2. Cluster profiles table (global, top 40 by size; bilingual)
+st.markdown("### 📋 Cluster profiles — global (top 40 by size)")
 st.caption(
-    "All clusters ranked by size. The `median_latency_h` column reveals which narratives drag the average — "
-    "scam clusters dominate the slow tail."
+    "Scam-related categories dominate the slow tail. "
+    "Use the column headers to sort by median latency or 2024 share."
 )
 
-cp = (
-    pd.read_csv("data/processed/cluster_profiles.csv")
+cp_display = (
+    cp[["cluster_id", "label_en", "label", "size", "median_latency_h", "pct_2020_win", "pct_2024_win"]]
     .sort_values("size", ascending=False)
     .head(40)
 )
 st.dataframe(
-    cp,
+    cp_display,
     column_config={
-        "cluster_id": st.column_config.NumberColumn("ID", width="small"),
-        "label": st.column_config.TextColumn("Top terms", width="large"),
-        "size": st.column_config.NumberColumn("Size", format="%d"),
+        "cluster_id":       st.column_config.NumberColumn("ID", width="small"),
+        "label_en":         st.column_config.TextColumn("Category (EN)", width="medium"),
+        "label":            st.column_config.TextColumn("Top terms (ZH)", width="medium"),
+        "size":             st.column_config.NumberColumn("Size", format="%d"),
         "median_latency_h": st.column_config.NumberColumn("Median latency (h)", format="%.1f"),
-        "pct_2020_win": st.column_config.NumberColumn("% of 2020 win", format="%.1f%%"),
-        "pct_2024_win": st.column_config.NumberColumn("% of 2024 win", format="%.1f%%"),
+        "pct_2020_win":     st.column_config.NumberColumn("% 2020 win", format="%.1f%%"),
+        "pct_2024_win":     st.column_config.NumberColumn("% 2024 win", format="%.1f%%"),
     },
     hide_index=True,
     use_container_width=True,
-    height=420,
+    height=440,
 )
 
-# 3. 2024 slowest narratives bar chart
+# ----- 3. 2024 slowest narratives bar chart (English y-axis)
 st.markdown("### ⚠️ 2024 election window — slowest narratives")
 st.caption(
     "Within the 2024 ±90-day window, these clusters had the highest median latency. "
-    "Scam narratives dominate — confirming the scam-driven slowdown."
+    "Scam categories dominate, confirming the scam-driven slowdown."
 )
 
-cp24 = (
-    pd.read_csv("data/processed/cluster_profiles_2024.csv")
-    .sort_values("median_h", ascending=False)
-    .head(15)
-)
+cp24_top = cp24.sort_values("median_h", ascending=False).head(15)
 fig_c = px.bar(
-    cp24,
+    cp24_top,
     x="median_h",
-    y=cp24["c24"].astype(str),
+    y="label_en",
     orientation="h",
     color="dominant_topic",
-    hover_data=["top_terms", "size", "pct_of_2024_win"],
-    labels={"median_h": "Median latency (hours)", "y": "Cluster ID"},
-    color_discrete_map={
-        "scam": "#ef4444",
-        "political": "#3b82f6",
-        "health": "#10b981",
-        "other": "#94a3b8",
+    hover_data={
+        "top_terms": True,
+        "size": True,
+        "pct_of_2024_win": ":.1f",
+        "label_en": False,
     },
+    labels={"median_h": "Median latency (hours)", "label_en": ""},
+    color_discrete_map={
+        "scam":      "#ef4444",
+        "political": "#3b82f6",
+        "health":    "#10b981",
+        "other":     "#94a3b8",
+    },
+    category_orders={"dominant_topic": ["scam", "political", "health", "other"]},
 )
 fig_c.update_layout(
     template=TPL,
-    height=480,
+    height=540,
     title="15 slowest clusters in the 2024 window",
-    margin=dict(t=50, b=40),
-    yaxis=dict(autorange="reversed"),
+    margin=dict(t=50, b=40, l=180),
+    yaxis=dict(autorange="reversed", tickfont=dict(size=12)),
     legend_title_text="Topic",
 )
 st.plotly_chart(fig_c, use_container_width=True)
 
-# 4. Annotated slow-clusters static image
+# ----- 4. Annotated slow-clusters static image
 st.image(
     "viz/clusters_slow.png",
     caption="Annotated UMAP — slowest 2024-window clusters highlighted.",
+    use_container_width=True,
+)
+
+# ----- 4. Annotated slow-clusters static image (English labels)
+st.image(
+    "viz/clusters_slow.png",
+    caption="Slowest 2024-window clusters annotated by English category. "
+            "Background: all 2024-window articles in UMAP 2D space.",
     use_container_width=True,
 )
 
