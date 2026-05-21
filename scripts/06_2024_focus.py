@@ -306,11 +306,14 @@ for (r, cx, cy), ly in zip(centroids, label_ys):
         zorder=3,
     )
 
-# Topic legend (lower right, compact)
+# Topic legend (lower right, compact) — only show topics actually present
+# among the highlighted slow clusters (e.g. if all 8 are scam+other, hide
+# political/health entries instead of misleading the reader).
+present_topics = set(prof_df.loc[prof_df["c24"].isin(slow_ids), "dominant_topic"])
 legend_elements = [
     Line2D([0], [0], marker='o', color='w', label=t.capitalize(),
            markerfacecolor=col, markersize=11, markeredgecolor='white', markeredgewidth=0.6)
-    for t, col in topic_colors.items()
+    for t, col in topic_colors.items() if t in present_topics
 ]
 leg = ax.legend(
     handles=legend_elements, loc="lower right", title="Dominant topic",
