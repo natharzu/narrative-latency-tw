@@ -121,7 +121,7 @@ sub_in_2024 = pol[pol["window"] == "2024"]
 themes_present = sub_in_2024["sub_theme"].value_counts().index.tolist()
 data = [sub_in_2024.loc[sub_in_2024["sub_theme"] == t, "latency_hours"].values for t in themes_present]
 labels = [f"{t}\n(N={len(d)})" for t, d in zip(themes_present, data)]
-bp = ax.boxplot(data, labels=labels, showfliers=False, patch_artist=True, widths=0.6)
+bp = ax.boxplot(data, tick_labels=labels, showfliers=False, patch_artist=True, widths=0.6)
 for patch, c in zip(bp["boxes"], ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444", "#cbd5e1"]):
     patch.set_facecolor(c); patch.set_alpha(0.7)
 ax.set_yscale("log")

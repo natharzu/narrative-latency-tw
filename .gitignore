@@ -4,3 +4,12 @@ data/raw/cofacts/
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Large pipeline intermediates (regenerable from scripts 05 + 06)
+data/processed/cofacts_clustered.csv
+data/processed/cofacts_topic_classified.csv
+data/processed/embeddings.npy
+data/processed/embeddings_idx.npy
+
+# Raw data dumps (download separately, see README)
+data/raw/

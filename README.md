@@ -141,3 +141,36 @@ The submitted headline (**10× slower 2024 vs 2020**) is confirmed. Hypothesis t
 - *Repliers slowed or left*: the smaller inflow takes 10× longer to verify.
 
 The intervention framing shifts from "more volunteers" to "why did the submission base leave between 2020 and 2024?"
+
+## Pipeline notes (updated 2026-05-21)
+
+### Date handling
+
+pandas 2.x strict ISO8601 silently fails on space-separated timezone-aware strings (e.g. `2017-01-11 03:23:00+00:00`). All date parses go through `scripts.utils.parse_dates_safe()` which uses `format='mixed'`.
+
+If `article_createdAt` is lost, it can be reconstructed exactly via `reply_createdAt − latency_hours`. See `scripts/repair_dates.py`.
+
+### Script order
+
+| #  | Script              | Output |
+| -- | ------------------- | ------ |
+| 01 | clean               | initial dedup + normalization of raw Cofacts dump |
+| 02 | latency             | cofacts_latency.csv (timestamps + latency_hours) |
+| 03 | election_windows    | cofacts_election_windows.csv (window flags) |
+| 04 | final_charts        | headline distribution + overlay viz |
+| 05 | cluster_articles    | embeddings + global HDBSCAN clusters |
+| 06 | 2024_focus          | topic classifier (scam/political/health/other) |
+| 07 | political_deep_dive | sub-theme classifier + Mann-Whitney |
+| 08 | political_refine    | strict classifier (drops 統一 false positives) |
+| 09 | electoral_timing    | electoral timing scatter + monthly volume |
+
+Library modules (not pipeline steps):
+- `scripts/utils.py` — shared helpers (safe date parsing, election constants)
+- `scripts/repair_dates.py` — one-shot recovery tool for corrupted dates
+
+### Findings
+
+- 10× slowdown holds (median 6.7h → 67.2h; p < 10⁻²⁰⁰) but scam-driven: scam share 8.2% → 28.4%
+- Cross-strait submissions collapsed: 75 → 11 strict in election windows
+- Political slowdown is modest: 1.8× median ratio (p = 3.6e-05)
+- Electoral 7–8× slowdown is queue-aging, not capacity loss
