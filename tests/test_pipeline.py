@@ -2,12 +2,15 @@
 tests/test_pipeline.py — regression tests for the narrative-latency-tw pipeline.
 
 Run:
-    python3 -m pip install -r requirements.txt pytest
-    python3 -m pytest tests/ -v
+    uv sync
+    uv run pytest tests/ -v
 
 Assumes the pipeline has produced:
     data/processed/cofacts_latency.csv
     data/processed/cofacts_election_windows.csv
+
+Data-dependent tests skip automatically when those CSVs are absent (they are
+gitignored), so the cluster-tagger unit tests still run in CI.
 
 Headlines being defended (locked 2026-05-14):
     - Overall median ≈ 21.2 h, N ≈ 68,533
@@ -20,19 +23,25 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
 import numpy as np
 import pandas as pd
 import pytest
 from scipy.stats import mannwhitneyu
 
-ROOT = Path(__file__).resolve().parent.parent
-LATENCY_CSV = ROOT / "data" / "processed" / "cofacts_latency.csv"
-WINDOWS_CSV = ROOT / "data" / "processed" / "cofacts_election_windows.csv"
+from narrative_latency import (
+    PROC,
+    E2020,
+    E2024,
+    WIN,
+    SNAPSHOT,
+    CLUSTERS,
+    tag,
+)
 
-SNAPSHOT = pd.Timestamp("2026-05-10", tz="UTC")
-E2020 = pd.Timestamp("2020-01-11", tz="UTC")
-E2024 = pd.Timestamp("2024-01-13", tz="UTC")
-WIN = pd.Timedelta(days=90)
+LATENCY_CSV = PROC / "cofacts_latency.csv"
+WINDOWS_CSV = PROC / "cofacts_election_windows.csv"
 
 EXPECTED_N_MIN = 60_000
 EXPECTED_MEDIAN_HOURS = 21.2
@@ -183,29 +192,7 @@ class TestElectionWindows:
         )
 
 
-# 4. Cluster tagger unit tests
-CLUSTERS = {
-    "vaccine": ["疫苗", "AZ", "BNT", "莫德納", "高端", "BioNTech",
-                "vaccine", "vaccination", "Pfizer", "Moderna"],
-    "us_skepticism": ["美國", "美军", "美軍", "拜登", "Biden", "Trump", "川普",
-                      "阿富汗", "Afghanistan", "美中"],
-    "pre_election": ["選舉", "选举", "总统", "總統", "候选", "候選", "投票",
-                     "election", "Lai", "賴清德", "蕭美琴", "侯友宜", "柯文哲"],
-    "ccp_info_manipulation": ["中共", "共产党", "共產黨", "解放军", "解放軍",
-                              "习近平", "習近平", "Xi Jinping", "PLA",
-                              "一国两制", "一國兩制"],
-}
-
-
-def tag(text: object) -> str:
-    if not isinstance(text, str):
-        return "Other"
-    for cluster, kws in CLUSTERS.items():
-        if any(kw in text for kw in kws):
-            return cluster
-    return "Other"
-
-
+# 4. Cluster tagger unit tests (tag + CLUSTERS imported from narrative_latency)
 class TestClusterTagger:
     @pytest.mark.parametrize(
         "text,expected",
