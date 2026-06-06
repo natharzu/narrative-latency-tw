@@ -11,13 +11,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from narrative_latency import PROC, VIZ
+from narrative_latency import PROC, VIZ, parse_dates_safe
 
 IN = PROC / "cofacts_latency.csv"
 VIZ.mkdir(exist_ok=True)
 
 df = pd.read_csv(IN)
-df["article_createdAt"] = pd.to_datetime(df["article_createdAt"], utc=True, format="ISO8601", errors="coerce")
+df["article_createdAt"] = parse_dates_safe(df["article_createdAt"])
 df["year"] = df["article_createdAt"].dt.year
 
 n = len(df)
