@@ -12,22 +12,25 @@ Pipeline:
 """
 from __future__ import annotations
 import re
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
 import numpy as np
 import pandas as pd
-import matplotlib
-matplotlib.rcParams["font.sans-serif"] = ["Arial Unicode MS", "PingFang TC", "Heiti TC", "sans-serif"]
-matplotlib.rcParams["axes.unicode_minus"] = False
 import matplotlib.pyplot as plt
-import matplotlib
-matplotlib.rcParams['font.sans-serif'] = ['Arial Unicode MS', 'Heiti TC', 'PingFang TC', 'sans-serif']
-matplotlib.rcParams['axes.unicode_minus'] = False
+import umap
+import hdbscan
+from sklearn.feature_extraction.text import CountVectorizer
 
-ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / "data" / "processed" / "cofacts_latency.csv"
-EMB_CACHE = ROOT / "data" / "processed" / "embeddings.npy"
-IDX_CACHE = ROOT / "data" / "processed" / "embeddings_idx.npy"
-VIZ = ROOT / "viz"
+from narrative_latency import PROC, VIZ, E2020, E2024, WIN, set_plot_style
+
+set_plot_style()
+
+SRC = PROC / "cofacts_latency.csv"
+EMB_CACHE = PROC / "embeddings.npy"
+IDX_CACHE = PROC / "embeddings_idx.npy"
 VIZ.mkdir(exist_ok=True)
 
 URL_RE = re.compile(r"https?://\S+|www\.\S+")
@@ -49,9 +52,6 @@ print(f"  URL-only: {df['is_url_only'].sum():,} ({df['is_url_only'].mean():.1%})
 print(f"  Embeddable: {(~df['is_url_only']).sum():,}")
 
 # Election windows
-E2020 = pd.Timestamp("2020-01-11", tz="UTC")
-E2024 = pd.Timestamp("2024-01-13", tz="UTC")
-WIN = pd.Timedelta(days=90)
 df["in_2020_win"] = (df["article_createdAt"] - E2020).abs() <= WIN
 df["in_2024_win"] = (df["article_createdAt"] - E2024).abs() <= WIN
 
@@ -67,6 +67,9 @@ if EMB_CACHE.exists() and IDX_CACHE.exists():
     assert len(cached_idx) == len(idx) and (cached_idx == idx).all(), "Cache stale; delete *.npy"
 else:
     print("→ Embedding (this takes a few minutes)…")
+    # Lazy import on purpose: sentence-transformers + torch are heavy (hundreds
+    # of MB) and only needed on a cache miss. They live in the `ml` optional
+    # dependency group, not the core install.
     from sentence_transformers import SentenceTransformer
     import torch
     device = ("mps" if torch.backends.mps.is_available()
@@ -84,7 +87,6 @@ print(f"  Embeddings: {embeddings.shape}")
 
 # 2. UMAP
 print("→ UMAP → 10D for clustering…")
-import umap
 emb_10d = umap.UMAP(
     n_components=10, n_neighbors=15, min_dist=0.0,
     metric="cosine", random_state=42, verbose=False,
@@ -98,7 +100,6 @@ emb_2d = umap.UMAP(
 
 # 3. HDBSCAN
 print("→ HDBSCAN clustering…")
-import hdbscan
 clusterer = hdbscan.HDBSCAN(
     min_cluster_size=80, min_samples=10, metric="euclidean",
 )
@@ -118,7 +119,6 @@ df.loc[idx, "umap_y"] = emb_2d[:, 1]
 
 # 5. c-TF-IDF labels
 print("→ c-TF-IDF labels…")
-from sklearn.feature_extraction.text import CountVectorizer
 real_clusters = sorted(c for c in set(labels) if c >= 0)
 docs = []
 for cid in real_clusters:
@@ -152,8 +152,8 @@ for cid in [-2] + real_clusters:
 prof = pd.DataFrame(profiles)
 
 # 7. Save outputs
-prof.to_csv(ROOT / "data" / "processed" / "cluster_profiles.csv", index=False)
-df.to_csv(ROOT / "data" / "processed" / "cofacts_clustered.csv", index=False)
+prof.to_csv(PROC / "cluster_profiles.csv", index=False)
+df.to_csv(PROC / "cofacts_clustered.csv", index=False)
 print(f"\n→ Saved cluster_profiles.csv ({len(prof)} rows)")
 print(f"→ Saved cofacts_clustered.csv")
 
