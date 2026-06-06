@@ -39,7 +39,7 @@ def load():
     if not csv.exists():
         return None
     df = pd.read_csv(csv)
-    df["article_createdAt"] = pd.to_datetime(df["article_createdAt"], errors="coerce", format="ISO8601", utc=True)
+    df["article_createdAt"] = pd.to_datetime(df["article_createdAt"], errors="coerce", format="mixed", utc=True)
     df = df.dropna(subset=["article_createdAt"])
     df["year"] = df["article_createdAt"].dt.year
     return df

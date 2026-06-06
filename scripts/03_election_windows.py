@@ -14,16 +14,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import mannwhitneyu
 
-from narrative_latency import PROC, VIZ, E2020, E2024, WIN, SNAPSHOT, tag
+from narrative_latency import PROC, VIZ, E2020, E2024, WIN, SNAPSHOT, tag, parse_dates_safe
 
 IN = PROC / "cofacts_latency.csv"
 OUT = PROC / "cofacts_election_windows.csv"
 VIZ.mkdir(exist_ok=True)
 
 df = pd.read_csv(IN)
-df["article_createdAt"] = pd.to_datetime(
-    df["article_createdAt"], utc=True, format="ISO8601", errors="coerce"
-)
+df["article_createdAt"] = parse_dates_safe(df["article_createdAt"])
 df = df.dropna(subset=["article_createdAt"]).copy()
 df["year"] = df["article_createdAt"].dt.year
 

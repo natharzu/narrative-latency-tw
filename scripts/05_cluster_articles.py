@@ -24,7 +24,7 @@ import umap
 import hdbscan
 from sklearn.feature_extraction.text import CountVectorizer
 
-from narrative_latency import PROC, VIZ, E2020, E2024, WIN, set_plot_style
+from narrative_latency import PROC, VIZ, E2020, E2024, WIN, set_plot_style, parse_dates_safe
 
 set_plot_style()
 
@@ -41,9 +41,7 @@ def clean(s: object) -> str:
 
 print("→ Loading data…")
 df = pd.read_csv(SRC)
-df["article_createdAt"] = pd.to_datetime(
-    df["article_createdAt"], utc=True, format="ISO8601", errors="coerce"
-)
+df["article_createdAt"] = parse_dates_safe(df["article_createdAt"])
 df["year"] = df["article_createdAt"].dt.year
 df["clean_text"] = df["text_preview"].apply(clean)
 df["is_url_only"] = df["clean_text"].str.len() < 10
