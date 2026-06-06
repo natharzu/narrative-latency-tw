@@ -1,9 +1,5 @@
-"""narrative_latency — shared library for the Cofacts narrative-latency capstone.
+"""narrative_latency: shared library for the Cofacts reply-latency study."""
 
-Single source of truth for repo paths, election anchors, the topic-cluster
-taxonomy, date-handling helpers, and matplotlib styling. Scripts import from
-here (directly or via the scripts/utils.py compatibility shim).
-"""
 from .constants import (
     ROOT,
     DATA,
@@ -23,7 +19,16 @@ from .dataio import (
     assign_window,
 )
 from .clusters import CLUSTERS, tag
-from .plotting import set_plot_style
+from .viz import set_plot_style
+from .analysis import (
+    in_window,
+    window_latencies,
+    window_ratio,
+    window_sensitivity,
+    per_year_median,
+    within_year_election_contrast,
+    loglinear_election_effect,
+)
 
 __all__ = [
     "ROOT",
@@ -43,4 +48,11 @@ __all__ = [
     "CLUSTERS",
     "tag",
     "set_plot_style",
+    "in_window",
+    "window_latencies",
+    "window_ratio",
+    "window_sensitivity",
+    "per_year_median",
+    "within_year_election_contrast",
+    "loglinear_election_effect",
 ]
