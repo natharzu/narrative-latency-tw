@@ -99,22 +99,28 @@ Three concrete moves recommended on slide 5 of the deck:
 
 ## 9. Reproducibility
 
+This project uses [uv](https://docs.astral.sh/uv/) for fast, reproducible environments.
+
     git clone https://github.com/natharzu/narrative-latency-tw.git
     cd narrative-latency-tw
-    python3 -m pip install -r requirements.txt
-
+    uv sync                    # core analysis env + dev (pytest)
+    uv sync --extra ml         # add the embedding/clustering stack (script 05)
+    uv sync --extra notebooks  # add jupyter + jupytext
 
     # Run the full pipeline
-    python3 scripts/01_clean.py
-    python3 scripts/02_latency.py
-    python3 scripts/03_election_windows.py
-    python3 scripts/04_final_charts.py
-    
+    uv run python scripts/01_clean.py
+    uv run python scripts/02_latency.py
+    uv run python scripts/03_election_windows.py
+    uv run python scripts/04_final_charts.py
 
-    # Or open the jupytext-generated notebooks
-    jupyter notebook notebooks/02_latency.ipynb
-    
-    
+    # Run the test suite
+    uv run pytest tests/ -v
+
+    # Launch the dashboard locally
+    uv run --extra app streamlit run app/streamlit_app.py
+
+The deployed Streamlit app (Streamlit Community Cloud) installs from `requirements.txt`, which is intentionally kept lean (app-runtime deps only). The full analysis / ML / dev environment lives in `pyproject.toml`.
+
 Snapshot: Hugging Face dataset `Cofacts/line-msg-fact-check-tw` as of 2026-05-10.
 
 ## 10. Companion project
@@ -149,7 +155,7 @@ The intervention framing shifts from "more volunteers" to "why did the submissio
 
 ### Date handling
 
-pandas 2.x strict ISO8601 silently fails on space-separated timezone-aware strings (e.g. `2017-01-11 03:23:00+00:00`). All date parses go through `scripts.utils.parse_dates_safe()` which uses `format='mixed'`.
+pandas 2.x strict ISO8601 silently fails on space-separated timezone-aware strings (e.g. `2017-01-11 03:23:00+00:00`). All date parses go through `narrative_latency.dataio.parse_dates_safe()` (re-exported via `scripts.utils` for backward compatibility) which uses `format='mixed'`.
 
 If `article_createdAt` is lost, it can be reconstructed exactly via `reply_createdAt − latency_hours`. See `scripts/repair_dates.py`.
 
@@ -168,7 +174,8 @@ If `article_createdAt` is lost, it can be reconstructed exactly via `reply_creat
 | 09 | electoral_timing    | electoral timing scatter + monthly volume |
 
 Library modules (not pipeline steps):
-- `scripts/utils.py` — shared helpers (safe date parsing, election constants)
+- `src/narrative_latency/` — installable package: election/window constants, repo paths, cluster tagging (`tag`), and safe date-handling helpers (single source of truth)
+- `scripts/utils.py` — backward-compatible shim re-exporting from `narrative_latency` (safe date parsing, election constants)
 - `scripts/repair_dates.py` — one-shot recovery tool for corrupted dates
 
 ### Findings

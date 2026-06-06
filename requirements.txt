@@ -1,14 +1,7 @@
-# Pipeline
+# Streamlit Community Cloud runtime dependencies ONLY (the deployed dashboard).
+# The full analysis / ML / dev environment is defined in pyproject.toml -> use `uv sync`.
 pandas>=2.0
-scipy>=1.11
-matplotlib>=3.7
 numpy
-
-# App (Streamlit Cloud)
-streamlit>=1.30
+scipy>=1.11
 plotly>=5.18
-
-# Dev
-jupyter
-jupytext
-pytest
+streamlit>=1.30
