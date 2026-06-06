@@ -38,6 +38,7 @@ from narrative_latency import (
     SNAPSHOT,
     CLUSTERS,
     parse_dates_safe,
+    reconstruct_article_dates,
     tag,
 )
 
@@ -62,6 +63,16 @@ def latency_df() -> pd.DataFrame:
     # (e.g. '2017-01-11 03:23:00+00:00') to NaT.
     df["article_createdAt"] = parse_dates_safe(df["article_createdAt"])
     df["reply_createdAt"] = parse_dates_safe(df["reply_createdAt"])
+    # A few article_createdAt cells are missing/corrupted in the stored CSV
+    # and remain NaT even after a mixed-format parse. Rebuild only those rows
+    # from reply_createdAt - latency_hours (the columns that survive every
+    # roundtrip) using the documented fallback, leaving well-formed rows as-is
+    # so genuine drift is still caught.
+    missing = df["article_createdAt"].isna()
+    if missing.any():
+        df.loc[missing, "article_createdAt"] = reconstruct_article_dates(
+            df.loc[missing]
+        )
     return df
 
 
