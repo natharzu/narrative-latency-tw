@@ -48,6 +48,16 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/narrative_latency"]
 
+[tool.uv]
+# Streamlit Community Cloud resolves dependencies with uv whenever a uv.lock
+# is present, and a plain `uv sync` installs only the core deps + the dev
+# group — it does NOT install optional-dependency extras. That left the
+# deployed dashboard without plotly/streamlit (ModuleNotFoundError at
+# `import plotly.express`). Installing the `app` extra by default fixes the
+# Cloud deploy while keeping the optional-dependencies layout intact:
+# `uv sync --extra app` and `uv sync --extra ml` still work as before.
+default-extras = ["app"]
+
 [tool.pytest.ini_options]
 # Make the src/ package importable in tests without requiring an editable install.
 pythonpath = ["src"]
