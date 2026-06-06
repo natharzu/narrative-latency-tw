@@ -19,7 +19,7 @@ from .dataio import (
     assign_window,
 )
 from .clusters import CLUSTERS, tag
-from .viz import set_plot_style
+from .plotting import set_plot_style
 from .analysis import (
     in_window,
     window_latencies,
