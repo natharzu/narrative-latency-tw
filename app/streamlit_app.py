@@ -3,9 +3,16 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+from pathlib import Path
 from scipy.stats import mannwhitneyu
 
 st.set_page_config(page_title="Narrative Latency — Taiwan", page_icon="⏱️", layout="wide")
+
+# Anchor every data/asset path to the repo root so the app behaves identically
+# whether launched from the repo root, from app/, or on Streamlit Cloud.
+BASE = Path(__file__).resolve().parent.parent
+PROC = BASE / "data" / "processed"
+VIZ = BASE / "viz"
 
 st.markdown("""
 <style>
@@ -17,30 +24,64 @@ st.markdown("""
 
 TPL = "plotly_dark"
 
+# Election windows: ±90 days around Taiwan presidential elections.
+# (Kept inline so the deployed app stays dependency-light; the analysis
+# pipeline imports the same anchors from the narrative_latency package.)
+E2020 = pd.Timestamp("2020-01-11", tz="UTC")
+E2024 = pd.Timestamp("2024-01-13", tz="UTC")
+WIN = pd.Timedelta(days=90)
+
+
 @st.cache_data
 def load():
-    df = pd.read_csv("data/processed/cofacts_latency.csv")
+    """Load the processed latency dataset. Returns None if it has not been built yet."""
+    csv = PROC / "cofacts_latency.csv"
+    if not csv.exists():
+        return None
+    df = pd.read_csv(csv)
     df["article_createdAt"] = pd.to_datetime(df["article_createdAt"], errors="coerce", format="ISO8601", utc=True)
     df = df.dropna(subset=["article_createdAt"])
     df["year"] = df["article_createdAt"].dt.year
     return df
 
+
 df = load()
+if df is None or df.empty:
+    st.markdown("# ⏱️ Narrative Latency — Taiwan")
+    st.error(
+        "**Processed dataset not found.**\n\n"
+        f"Expected `{PROC / 'cofacts_latency.csv'}`.\n\n"
+        "Build it first, then reload:\n\n"
+        "```bash\nuv run python scripts/01_clean.py\nuv run python scripts/02_latency.py\n```"
+    )
+    st.stop()
 
 # ============ HERO ============
 st.markdown("# ⏱️ Narrative Latency — Taiwan")
 st.caption("How fast does Cofacts' community fact-check Taiwan's LINE rumors? Interactive view of 68,533 article–reply pairs, 2016–2026.")
 
-# Election windows: ±90 days around Taiwan presidential elections
-_e2020 = pd.Timestamp("2020-01-11", tz="UTC")
-_e2024 = pd.Timestamp("2024-01-13", tz="UTC")
-_win = pd.Timedelta(days=90)
-df_2020 = df[(df["article_createdAt"] >= _e2020 - _win) & (df["article_createdAt"] <= _e2020 + _win)]
-df_2024 = df[(df["article_createdAt"] >= _e2024 - _win) & (df["article_createdAt"] <= _e2024 + _win)]
+df_2020 = df[(df["article_createdAt"] >= E2020 - WIN) & (df["article_createdAt"] <= E2020 + WIN)]
+df_2024 = df[(df["article_createdAt"] >= E2024 - WIN) & (df["article_createdAt"] <= E2024 + WIN)]
 e2020 = df_2020["latency_hours"]
 e2024 = df_2024["latency_hours"]
+
+# Validate the headline inputs instead of asserting. A bad/empty slice now
+# degrades gracefully rather than crashing the whole app.
+if len(e2020) == 0 or len(e2024) == 0 or e2020.median() == 0:
+    st.error(
+        "**Election-window data is unavailable.**\n\n"
+        "One of the 2020/2024 ±90-day slices is empty, so the headline ratio "
+        "cannot be computed. Re-run the pipeline (`scripts/01_clean.py` → "
+        "`scripts/03_election_windows.py`) and reload."
+    )
+    st.stop()
+
 ratio = e2024.median() / e2020.median()
-assert abs(ratio - 10.0) < 0.5, f'Headline ratio drifted: {ratio:.2f}× (expected ~10.0×)'
+if abs(ratio - 10.0) >= 0.5:
+    st.warning(
+        f"Headline ratio is {ratio:.2f}× (locked snapshot expects ~10.0×). "
+        "The underlying data may have changed since 2026-05-14."
+    )
 u_stat, p_val = mannwhitneyu(e2024, e2020, alternative="greater")
 
 h1, h2, h3 = st.columns([2, 1, 1])
@@ -225,98 +266,109 @@ st.caption(
     "Mandarin keyword lists translated to English category labels for readability."
 )
 
-# Load enriched cluster data
-cp = pd.read_csv("data/processed/cluster_profiles.csv")
-cp24 = pd.read_csv("data/processed/cluster_profiles_2024.csv")
+# Load enriched cluster data (optional — produced by scripts/05_cluster_articles.py).
+cp_path = PROC / "cluster_profiles.csv"
+cp24_path = PROC / "cluster_profiles_2024.csv"
+if not (cp_path.exists() and cp24_path.exists()):
+    st.info(
+        "Cluster profiles not found — run `scripts/05_cluster_articles.py` "
+        "to enable this section. The rest of the dashboard is unaffected."
+    )
+else:
+    cp = pd.read_csv(cp_path)
+    cp24 = pd.read_csv(cp24_path)
 
-# ----- KPI row
-k1, k2, k3 = st.columns(3)
-k1.metric("Global clusters", f"{len(cp)}")
-k2.metric("Clusters in 2024 window", f"{len(cp24)}")
-scam_share = cp24.loc[cp24["dominant_topic"] == "scam", "pct_of_2024_win"].sum()
-k3.metric("Scam share of 2024 window", f"{scam_share:.1f}%")
+    # ----- KPI row
+    k1, k2, k3 = st.columns(3)
+    k1.metric("Global clusters", f"{len(cp)}")
+    k2.metric("Clusters in 2024 window", f"{len(cp24)}")
+    scam_share = cp24.loc[cp24["dominant_topic"] == "scam", "pct_of_2024_win"].sum()
+    k3.metric("Scam share of 2024 window", f"{scam_share:.1f}%")
 
-# ----- 1. UMAP hero image
-st.image(
-    "viz/clusters_umap.png",
-    caption="Global cluster map — 2D UMAP projection of article embeddings, colored by HDBSCAN cluster.",
-    use_container_width=True,
-)
+    # ----- 1. UMAP hero image
+    umap_img = VIZ / "clusters_umap.png"
+    if umap_img.exists():
+        st.image(
+            str(umap_img),
+            caption="Global cluster map — 2D UMAP projection of article embeddings, colored by HDBSCAN cluster.",
+            use_container_width=True,
+        )
 
-# ----- 2. Cluster profiles table (global, top 40 by size; bilingual)
-st.markdown("### 📋 Cluster profiles — global (top 40 by size)")
-st.caption(
-    "Scam-related categories dominate the slow tail. "
-    "Use the column headers to sort by median latency or 2024 share."
-)
+    # ----- 2. Cluster profiles table (global, top 40 by size; bilingual)
+    st.markdown("### 📋 Cluster profiles — global (top 40 by size)")
+    st.caption(
+        "Scam-related categories dominate the slow tail. "
+        "Use the column headers to sort by median latency or 2024 share."
+    )
 
-cp_display = (
-    cp[["cluster_id", "label_en", "label", "size", "median_latency_h", "pct_2020_win", "pct_2024_win"]]
-    .sort_values("size", ascending=False)
-    .head(40)
-)
-st.dataframe(
-    cp_display,
-    column_config={
-        "cluster_id":       st.column_config.NumberColumn("ID", width="small"),
-        "label_en":         st.column_config.TextColumn("Category (EN)", width="medium"),
-        "label":            st.column_config.TextColumn("Top terms (ZH)", width="medium"),
-        "size":             st.column_config.NumberColumn("Size", format="%d"),
-        "median_latency_h": st.column_config.NumberColumn("Median latency (h)", format="%.1f"),
-        "pct_2020_win":     st.column_config.NumberColumn("% 2020 win", format="%.1f%%"),
-        "pct_2024_win":     st.column_config.NumberColumn("% 2024 win", format="%.1f%%"),
-    },
-    hide_index=True,
-    use_container_width=True,
-    height=440,
-)
+    cp_display = (
+        cp[["cluster_id", "label_en", "label", "size", "median_latency_h", "pct_2020_win", "pct_2024_win"]]
+        .sort_values("size", ascending=False)
+        .head(40)
+    )
+    st.dataframe(
+        cp_display,
+        column_config={
+            "cluster_id":       st.column_config.NumberColumn("ID", width="small"),
+            "label_en":         st.column_config.TextColumn("Category (EN)", width="medium"),
+            "label":            st.column_config.TextColumn("Top terms (ZH)", width="medium"),
+            "size":             st.column_config.NumberColumn("Size", format="%d"),
+            "median_latency_h": st.column_config.NumberColumn("Median latency (h)", format="%.1f"),
+            "pct_2020_win":     st.column_config.NumberColumn("% 2020 win", format="%.1f%%"),
+            "pct_2024_win":     st.column_config.NumberColumn("% 2024 win", format="%.1f%%"),
+        },
+        hide_index=True,
+        use_container_width=True,
+        height=440,
+    )
 
-# ----- 3. 2024 slowest narratives bar chart (English y-axis)
-st.markdown("### ⚠️ 2024 election window — slowest narratives")
-st.caption(
-    "Within the 2024 ±90-day window, these clusters had the highest median latency. "
-    "Scam categories dominate, confirming the scam-driven slowdown."
-)
+    # ----- 3. 2024 slowest narratives bar chart (English y-axis)
+    st.markdown("### ⚠️ 2024 election window — slowest narratives")
+    st.caption(
+        "Within the 2024 ±90-day window, these clusters had the highest median latency. "
+        "Scam categories dominate, confirming the scam-driven slowdown."
+    )
 
-cp24_top = cp24.sort_values("median_h", ascending=False).head(15)
-fig_c = px.bar(
-    cp24_top,
-    x="median_h",
-    y="label_en",
-    orientation="h",
-    color="dominant_topic",
-    hover_data={
-        "top_terms": True,
-        "size": True,
-        "pct_of_2024_win": ":.1f",
-        "label_en": False,
-    },
-    labels={"median_h": "Median latency (hours)", "label_en": ""},
-    color_discrete_map={
-        "scam":      "#ef4444",
-        "political": "#3b82f6",
-        "health":    "#10b981",
-        "other":     "#94a3b8",
-    },
-    category_orders={"dominant_topic": ["scam", "political", "health", "other"]},
-)
-fig_c.update_layout(
-    template=TPL,
-    height=540,
-    title="15 slowest clusters in the 2024 window",
-    margin=dict(t=50, b=40, l=180),
-    yaxis=dict(autorange="reversed", tickfont=dict(size=12)),
-    legend_title_text="Topic",
-)
-st.plotly_chart(fig_c, use_container_width=True)
+    cp24_top = cp24.sort_values("median_h", ascending=False).head(15)
+    fig_c = px.bar(
+        cp24_top,
+        x="median_h",
+        y="label_en",
+        orientation="h",
+        color="dominant_topic",
+        hover_data={
+            "top_terms": True,
+            "size": True,
+            "pct_of_2024_win": ":.1f",
+            "label_en": False,
+        },
+        labels={"median_h": "Median latency (hours)", "label_en": ""},
+        color_discrete_map={
+            "scam":      "#ef4444",
+            "political": "#3b82f6",
+            "health":    "#10b981",
+            "other":     "#94a3b8",
+        },
+        category_orders={"dominant_topic": ["scam", "political", "health", "other"]},
+    )
+    fig_c.update_layout(
+        template=TPL,
+        height=540,
+        title="15 slowest clusters in the 2024 window",
+        margin=dict(t=50, b=40, l=180),
+        yaxis=dict(autorange="reversed", tickfont=dict(size=12)),
+        legend_title_text="Topic",
+    )
+    st.plotly_chart(fig_c, use_container_width=True)
 
-# ----- 4. Annotated slow-clusters static image
-st.image(
-    "viz/clusters_slow.png",
-    caption="Annotated UMAP — slowest 2024-window clusters highlighted.",
-    use_container_width=True,
-)
-
+    # ----- 4. Annotated slow-clusters static image
+    slow_img = VIZ / "clusters_slow.png"
+    if slow_img.exists():
+        st.image(
+            str(slow_img),
+            caption="Annotated UMAP — slowest 2024-window clusters highlighted.",
+            use_container_width=True,
+        )
 
 
 # ============ Caveats ============
