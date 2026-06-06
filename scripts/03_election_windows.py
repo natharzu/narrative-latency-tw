@@ -5,14 +5,19 @@ Inputs:  data/processed/cofacts_latency.csv
 Outputs: data/processed/cofacts_election_windows.csv (adds election_window + topic_cluster)
          viz/election_window_comparison.png
 """
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
 import pandas as pd
 import matplotlib.pyplot as plt
-from pathlib import Path
 from scipy.stats import mannwhitneyu
 
-IN = Path("data/processed/cofacts_latency.csv")
-OUT = Path("data/processed/cofacts_election_windows.csv")
-VIZ = Path("viz")
+from narrative_latency import PROC, VIZ, E2020, E2024, WIN, SNAPSHOT, tag
+
+IN = PROC / "cofacts_latency.csv"
+OUT = PROC / "cofacts_election_windows.csv"
 VIZ.mkdir(exist_ok=True)
 
 df = pd.read_csv(IN)
@@ -21,11 +26,6 @@ df["article_createdAt"] = pd.to_datetime(
 )
 df = df.dropna(subset=["article_createdAt"]).copy()
 df["year"] = df["article_createdAt"].dt.year
-
-# Taiwan presidential elections
-E2020 = pd.Timestamp("2020-01-11", tz="UTC")
-E2024 = pd.Timestamp("2024-01-13", tz="UTC")
-WIN = pd.Timedelta(days=90)
 
 df["near_2020"] = (df["article_createdAt"] - E2020).abs() <= WIN
 df["near_2024"] = (df["article_createdAt"] - E2024).abs() <= WIN
@@ -66,7 +66,6 @@ print()
 print("=" * 60)
 print("SURVIVORSHIP SENSITIVITY (≥6 months before snapshot)")
 print("=" * 60)
-SNAPSHOT = pd.Timestamp("2026-05-10", tz="UTC")
 ripe = df[df["article_createdAt"] <= SNAPSHOT - pd.Timedelta(days=180)]
 e20_r = ripe[ripe["near_2020"]]["latency_hours"]
 e24_r = ripe[ripe["near_2024"]]["latency_hours"]
@@ -79,26 +78,6 @@ print("If ratio is close to the full-sample ratio, the slowdown is robust to sur
 # ============================================================
 # 4. CLUSTER TAGGING (keyword-based on text_preview)
 # ============================================================
-CLUSTERS = {
-    "vaccine": ["疫苗", "AZ", "BNT", "莫德納", "高端", "BioNTech",
-                "vaccine", "vaccination", "Pfizer", "Moderna"],
-    "us_skepticism": ["美國", "美军", "美軍", "拜登", "Biden", "Trump", "川普",
-                      "阿富汗", "Afghanistan", "美中"],
-    "pre_election": ["選舉", "选举", "总统", "總統", "候选", "候選", "投票",
-                     "election", "Lai", "賴清德", "蕭美琴", "侯友宜", "柯文哲"],
-    "ccp_info_manipulation": ["中共", "共产党", "共產黨", "解放军", "解放軍",
-                              "习近平", "習近平", "Xi Jinping", "PLA", "一国两制",
-                              "一國兩制"],
-}
-
-def tag(text):
-    if not isinstance(text, str):
-        return "Other"
-    for cluster, kws in CLUSTERS.items():
-        if any(kw in text for kw in kws):
-            return cluster
-    return "Other"
-
 df["topic_cluster"] = df["text_preview"].apply(tag)
 
 print()

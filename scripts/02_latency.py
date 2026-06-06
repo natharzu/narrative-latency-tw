@@ -3,12 +3,17 @@ Compute Cofacts article->reply latency metrics.
 Reads data/processed/cofacts_latency.csv (produced by clean.py).
 Writes viz/cofacts_latency_distribution.png + viz/cofacts_latency_by_year.png.
 """
-import pandas as pd
-import matplotlib.pyplot as plt
+import sys
 from pathlib import Path
 
-IN = Path("data/processed/cofacts_latency.csv")
-VIZ = Path("viz")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from narrative_latency import PROC, VIZ
+
+IN = PROC / "cofacts_latency.csv"
 VIZ.mkdir(exist_ok=True)
 
 df = pd.read_csv(IN)

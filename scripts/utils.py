@@ -1,50 +1,58 @@
-"""Shared utilities for the Cofacts narrative-latency pipeline."""
+"""Backward-compatible shim for the narrative-latency pipeline.
+
+The canonical implementations now live in the ``narrative_latency`` package
+under ``src/``. This module bootstraps ``src/`` onto ``sys.path`` and re-exports
+the package API so existing ``from utils import ...`` calls (e.g. in
+09_electoral_timing.py and repair_dates.py) keep working when scripts are run
+directly, without requiring an editable install.
+
+Prefer importing from ``narrative_latency`` directly in new code.
+"""
+import sys
 from pathlib import Path
-import pandas as pd
 
-ROOT = Path(__file__).resolve().parent.parent
-PROC = ROOT / "data" / "processed"
-VIZ = ROOT / "viz"
+# Make src/ importable when running scripts directly (no install needed).
+_SRC = Path(__file__).resolve().parents[1] / "src"
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
 
-# Election anchors (Taiwan presidential)
-WIN = pd.Timedelta(days=90)
-E2020 = pd.Timestamp("2020-01-11", tz="UTC")
-E2024 = pd.Timestamp("2024-01-13", tz="UTC")
-ELECTIONS = {"2020": E2020, "2024": E2024}
+from narrative_latency.constants import (  # noqa: E402,F401
+    ROOT,
+    DATA,
+    RAW,
+    PROC,
+    VIZ,
+    WIN,
+    E2020,
+    E2024,
+    ELECTIONS,
+    SNAPSHOT,
+)
+from narrative_latency.dataio import (  # noqa: E402,F401
+    parse_dates_safe,
+    reconstruct_article_dates,
+    cast_bool_columns,
+    assign_window,
+)
+from narrative_latency.clusters import CLUSTERS, tag  # noqa: E402,F401
+from narrative_latency.plotting import set_plot_style  # noqa: E402,F401
 
-
-def parse_dates_safe(series, utc=True):
-    """Roundtrip-safe datetime parse.
-
-    pandas 2.x strict ISO8601 fails silently on space-separated tz-aware
-    strings like '2017-01-11 03:23:00+00:00'. format='mixed' handles them.
-    Use this everywhere instead of raw pd.to_datetime.
-    """
-    return pd.to_datetime(series, format="mixed", utc=utc, errors="coerce")
-
-
-def reconstruct_article_dates(df):
-    """article_createdAt = reply_createdAt - latency_hours (exact arithmetic).
-
-    Both source columns are reliably preserved through every CSV roundtrip.
-    Use as fallback when article_createdAt is corrupted.
-    """
-    reply = parse_dates_safe(df["reply_createdAt"])
-    return reply - pd.to_timedelta(df["latency_hours"], unit="h")
-
-
-def cast_bool_columns(df, columns):
-    """Restore object -> bool after CSV roundtrip."""
-    for col in columns:
-        if col in df.columns and df[col].dtype == object:
-            df[col] = df[col].astype(str).str.lower().eq("true")
-    return df
-
-
-def assign_window(df):
-    """Derive 'window' column from in_2020_win / in_2024_win flags."""
-    df = df.copy()
-    df["window"] = "off"
-    df.loc[df["in_2020_win"], "window"] = "2020"
-    df.loc[df["in_2024_win"], "window"] = "2024"
-    return df
+__all__ = [
+    "ROOT",
+    "DATA",
+    "RAW",
+    "PROC",
+    "VIZ",
+    "WIN",
+    "E2020",
+    "E2024",
+    "ELECTIONS",
+    "SNAPSHOT",
+    "parse_dates_safe",
+    "reconstruct_article_dates",
+    "cast_bool_columns",
+    "assign_window",
+    "CLUSTERS",
+    "tag",
+    "set_plot_style",
+]

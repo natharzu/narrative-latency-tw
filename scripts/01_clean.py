@@ -6,11 +6,17 @@ https://huggingface.co/datasets/Cofacts/line-msg-fact-check-tw).
 Joins each article to its FIRST normal reply, computes article->reply latency.
 Output: data/processed/cofacts_latency.csv
 """
-import pandas as pd
+import sys
 from pathlib import Path
 
-COFACTS = Path("data/raw/cofacts")
-OUT = Path("data/processed")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+import pandas as pd
+
+from narrative_latency import RAW, PROC
+
+COFACTS = RAW / "cofacts"
+OUT = PROC
 OUT.mkdir(parents=True, exist_ok=True)
 
 print("Loading Cofacts tables from local CSV zips...")
