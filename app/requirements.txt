@@ -1,0 +1,10 @@
+# Streamlit Community Cloud reads THIS file first (it sits next to the
+# entrypoint app/streamlit_app.py, which Cloud searches before the repo root).
+# Keeping it here forces a pip install of the dashboard runtime deps instead of
+# letting the root uv.lock drive a uv install that omits the `app` extra.
+# Mirrors the [project.optional-dependencies].app group in pyproject.toml.
+pandas>=2.0
+numpy
+scipy>=1.11
+plotly>=5.18
+streamlit>=1.30
