@@ -28,6 +28,7 @@ from .analysis import (
     per_year_median,
     within_year_election_contrast,
     loglinear_election_effect,
+    loglinear_election_effect_year_fe,
 )
 
 __all__ = [
@@ -55,4 +56,5 @@ __all__ = [
     "per_year_median",
     "within_year_election_contrast",
     "loglinear_election_effect",
+    "loglinear_election_effect_year_fe",
 ]

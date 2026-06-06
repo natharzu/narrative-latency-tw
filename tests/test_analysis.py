@@ -17,6 +17,7 @@ from narrative_latency import (
     per_year_median,
     within_year_election_contrast,
     loglinear_election_effect,
+    loglinear_election_effect_year_fe,
 )
 
 
@@ -153,3 +154,36 @@ class TestLogLinearEffect:
         df["article_createdAt"] = pd.to_datetime(df["article_createdAt"], utc=True)
         with pytest.raises(ValueError):
             loglinear_election_effect(df)
+
+
+class TestLogLinearYearFE:
+    def _df(self):
+        # Rising baseline level by year; each election window is exactly half
+        # of its OWN year's baseline (i.e. faster within-year).
+        dates, lat = [], []
+        levels = {y: 10.0 * (1.5 ** (y - 2018)) for y in range(2018, 2025)}
+        for y in range(2018, 2025):
+            for _ in range(100):
+                dates.append(pd.Timestamp(f"{y}-06-01", tz="UTC"))
+                lat.append(levels[y])
+        for _ in range(100):
+            dates.append(pd.Timestamp("2020-01-11", tz="UTC"))
+            lat.append(levels[2020] * 0.5)
+        for _ in range(100):
+            dates.append(pd.Timestamp("2024-01-13", tz="UTC"))
+            lat.append(levels[2024] * 0.5)
+        return pd.DataFrame({"article_createdAt": dates, "latency_hours": lat})
+
+    def test_fe_recovers_within_year_window_effect(self):
+        fe = loglinear_election_effect_year_fe(self._df())
+        # Both windows are half their own year -> multiplier ~0.5, < 1.
+        assert fe["early_multiplier"] < 1.0
+        assert fe["late_multiplier"] < 1.0
+        assert fe["early_multiplier"] == pytest.approx(0.5, rel=0.05)
+        assert fe["late_multiplier"] == pytest.approx(0.5, rel=0.05)
+
+    def test_raises_on_empty(self):
+        df = pd.DataFrame({"article_createdAt": [], "latency_hours": []})
+        df["article_createdAt"] = pd.to_datetime(df["article_createdAt"], utc=True)
+        with pytest.raises(ValueError):
+            loglinear_election_effect_year_fe(df)
