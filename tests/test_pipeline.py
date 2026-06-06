@@ -37,6 +37,7 @@ from narrative_latency import (
     WIN,
     SNAPSHOT,
     CLUSTERS,
+    parse_dates_safe,
     tag,
 )
 
@@ -56,12 +57,11 @@ def latency_df() -> pd.DataFrame:
     if not LATENCY_CSV.exists():
         pytest.skip(f"Missing {LATENCY_CSV}; run scripts/01_clean.py first.")
     df = pd.read_csv(LATENCY_CSV)
-    df["article_createdAt"] = pd.to_datetime(
-        df["article_createdAt"], utc=True, format="ISO8601", errors="coerce"
-    )
-    df["reply_createdAt"] = pd.to_datetime(
-        df["reply_createdAt"], utc=True, format="ISO8601", errors="coerce"
-    )
+    # Use the package's roundtrip-safe parser (format="mixed"). Strict
+    # ISO8601 silently coerces the CSVs' space-separated tz-aware strings
+    # (e.g. '2017-01-11 03:23:00+00:00') to NaT.
+    df["article_createdAt"] = parse_dates_safe(df["article_createdAt"])
+    df["reply_createdAt"] = parse_dates_safe(df["reply_createdAt"])
     return df
 
 
@@ -70,9 +70,7 @@ def windows_df() -> pd.DataFrame:
     if not WINDOWS_CSV.exists():
         pytest.skip(f"Missing {WINDOWS_CSV}; run scripts/03_election_windows.py first.")
     df = pd.read_csv(WINDOWS_CSV)
-    df["article_createdAt"] = pd.to_datetime(
-        df["article_createdAt"], utc=True, format="ISO8601", errors="coerce"
-    )
+    df["article_createdAt"] = parse_dates_safe(df["article_createdAt"])
     return df
 
 
