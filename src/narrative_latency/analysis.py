@@ -91,6 +91,11 @@ def loglinear_election_effect(df, early=E2020, late=E2024, win=WIN, date_col=DAT
     Disentangles the secular slowdown (year trend) from an election-window
     effect. Returns each election's multiplicative effect on latency
     (``10**coef``) net of the trend, plus the per-year trend multiplier.
+
+    NOTE: the single *linear* year term cannot fit a non-monotonic secular
+    trend, so it can misattribute a slow year's level to the election dummy.
+    Prefer ``loglinear_election_effect_year_fe`` (or the non-parametric
+    ``within_year_election_contrast``) for the headline estimate.
     """
     d = df[[date_col, val_col]].copy()
     d = d.dropna(subset=[date_col])
@@ -113,4 +118,38 @@ def loglinear_election_effect(df, early=E2020, late=E2024, win=WIN, date_col=DAT
         "early_multiplier": float(10 ** coef[2]),
         "late_effect_dex": float(coef[3]),
         "late_multiplier": float(10 ** coef[3]),
+    }
+
+
+def loglinear_election_effect_year_fe(df, early=E2020, late=E2024, win=WIN, date_col=DATE_COL, val_col=VAL_COL):
+    """OLS of log10(latency) on YEAR FIXED EFFECTS + per-election indicators.
+
+    One dummy per observed calendar year absorbs the (non-monotonic) secular
+    level, so each election coefficient measures the *within-year* election-
+    window effect. This is the regression analogue of
+    ``within_year_election_contrast`` and reconciles with it: a multiplier
+    below 1 means faster-than-its-own-year during the window.
+    """
+    d = df[[date_col, val_col]].copy()
+    d = d.dropna(subset=[date_col])
+    lat = pd.to_numeric(d[val_col], errors="coerce")
+    d = d.assign(_lat=lat).dropna(subset=["_lat"])
+    if d.empty:
+        raise ValueError("No usable rows for loglinear_election_effect_year_fe.")
+    y = np.log10(d["_lat"].clip(lower=_LOG_FLOOR).to_numpy())
+    years = d[date_col].dt.year
+    # Year dummies; drop_first avoids collinearity with the intercept.
+    year_fe = pd.get_dummies(years, prefix="yr", drop_first=True).to_numpy(dtype=float)
+    in_e = in_window(d[date_col], early, win).to_numpy().astype(float)
+    in_l = in_window(d[date_col], late, win).to_numpy().astype(float)
+    X = np.column_stack([np.ones(len(y)), year_fe, in_e, in_l])
+    coef, *_ = np.linalg.lstsq(X, y, rcond=None)
+    early_dex, late_dex = float(coef[-2]), float(coef[-1])
+    return {
+        "n": int(d.shape[0]),
+        "n_year_dummies": int(year_fe.shape[1]),
+        "early_effect_dex": early_dex,
+        "early_multiplier": float(10 ** early_dex),
+        "late_effect_dex": late_dex,
+        "late_multiplier": float(10 ** late_dex),
     }

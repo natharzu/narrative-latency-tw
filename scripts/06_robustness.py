@@ -5,7 +5,8 @@ Reads ``data/processed/cofacts_latency.csv`` and reports:
   2. Secular trend: median latency per calendar year.
   3. Within-year election contrast: each election window vs its own year's
      out-of-window baseline.
-  4. Log-linear model: election-window effects net of the year trend.
+  4. Log-linear model (linear year trend): election effects net of trend.
+  5. Log-linear model (YEAR FIXED EFFECTS): within-year election effects.
 
 Run:
     uv run python scripts/06_robustness.py
@@ -30,6 +31,7 @@ from narrative_latency import (
     per_year_median,
     within_year_election_contrast,
     loglinear_election_effect,
+    loglinear_election_effect_year_fe,
 )
 
 CSV = PROC / "cofacts_latency.csv"
@@ -72,25 +74,33 @@ def main() -> None:
         )
     print()
 
-    print("== 4. Log-linear model: log10(latency) ~ year + election windows ==")
+    print("== 4. Log-linear model (LINEAR year trend) ==")
     m = loglinear_election_effect(df)
     print(
         f"  Secular trend:      x{m['year_trend_mult_per_yr']:.3f} per year "
         f"({m['year_trend_dex_per_yr']:+.3f} dex/yr)"
     )
+    print(f"  2020 window effect: x{m['early_multiplier']:.3f} ({m['early_effect_dex']:+.3f} dex)")
+    print(f"  2024 window effect: x{m['late_multiplier']:.3f} ({m['late_effect_dex']:+.3f} dex)")
+    print("  (A linear year term underfits the non-monotonic trend -- see #5.)")
+    print()
+
+    print("== 5. Log-linear model (YEAR FIXED EFFECTS) ==")
+    fe = loglinear_election_effect_year_fe(df)
+    print(f"  Year dummies: {fe['n_year_dummies']}")
     print(
-        f"  2020 window effect: x{m['early_multiplier']:.3f} "
-        f"({m['early_effect_dex']:+.3f} dex), net of trend"
+        f"  2020 window effect: x{fe['early_multiplier']:.3f} "
+        f"({fe['early_effect_dex']:+.3f} dex), within-year"
     )
     print(
-        f"  2024 window effect: x{m['late_multiplier']:.3f} "
-        f"({m['late_effect_dex']:+.3f} dex), net of trend"
+        f"  2024 window effect: x{fe['late_multiplier']:.3f} "
+        f"({fe['late_effect_dex']:+.3f} dex), within-year"
     )
     print()
     print(
-        "Interpretation: if the 2024-window multiplier stays well above 1 after "
-        "controlling for the year trend, the election-window slowdown is more "
-        "than the secular drift."
+        "Interpretation: with year fixed effects absorbing the secular level, "
+        "both election-window multipliers should fall below 1 -- i.e. faster "
+        "than their own year -- reconciling the regression with check #3."
     )
 
 
