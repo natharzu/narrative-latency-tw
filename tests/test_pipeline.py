@@ -18,6 +18,23 @@ Headlines being defended (locked 2026-05-14):
     - 2024 / 2020 ratio ≈ 10×; Mann–Whitney one-sided p < 10⁻²⁰⁰
     - Ratio ≥ 9× when restricted to articles ≥ 180 days before snapshot
 
+Reframed thesis being defended (locked 2026-06; recomputed on the 68,453-row
+usable snapshot):
+    - The 10× cross-election gap is the visible tip of a ~38× platform-wide
+      secular slowdown: per-year median rises from a 2018 floor (≈8 h) to a
+      2024 peak (≈291 h).
+    - Election windows are *bright spots*, not slow zones: within each
+      election year the ±90-day window is FASTER than that year's baseline
+      (2020 ≈ 0.46×, 2024 ≈ 0.13×), and the effect survives year fixed effects.
+    - The cross-election ratio is not a window-size artefact (stable across a
+      30–180 day sweep).
+    - Topic mix is dominated by 'Other' (≈88%); the four substantive clusters
+      are us_skepticism > vaccine > pre_election > ccp_info_manipulation.
+
+These golden values are pinned with tolerances. Run locally against your CSV;
+if a value legitimately moved (e.g. a re-pull), update the constant rather than
+loosening the test.
+
 Note on timestamps: latency_hours is the locked, authoritative metric and is
 complete for every row. The auxiliary source timestamps (article_createdAt,
 reply_createdAt) are stored as strings in the CSV; a small number of rows have
@@ -46,6 +63,9 @@ from narrative_latency import (
     CLUSTERS,
     parse_dates_safe,
     reconstruct_article_dates,
+    per_year_median,
+    within_year_election_contrast,
+    loglinear_election_effect_year_fe,
     tag,
 )
 
@@ -60,6 +80,34 @@ RATIO_TOL = 2.0
 # Stored CSV may carry a negligible number of irreparably corrupted source
 # timestamps (both endpoints missing). Bound, don't ignore.
 MAX_TIMESTAMP_CORRUPTION = 0.05
+
+# --- Reframed-thesis golden values (locked 2026-06; 68,453-row snapshot) -----
+# Window-size sweep: smallest/largest 2024-over-2020 median ratio observed was
+# 7.10× (45d) .. 9.94× (90d); bound generously so a real collapse still trips.
+WINDOW_SIZES_DAYS = [30, 45, 60, 90, 120, 180]
+MIN_CROSS_ELECTION_RATIO = 5.0
+MAX_CROSS_ELECTION_RATIO = 13.0
+# Secular slowdown: 2018 ≈ 8.2 h floor, 2024 ≈ 290.6 h peak.
+YEAR_FAST_FLOOR = 2018
+YEAR_FLOOR_MAX_MEDIAN_H = 20.0
+YEAR_PEAK = 2024
+YEAR_PEAK_MIN_MEDIAN_H = 100.0
+SECULAR_PEAK_OVER_FLOOR_MIN = 8.0
+# Bright spots: within-year window/baseline < 1 (2020 ≈ 0.46, 2024 ≈ 0.13).
+MAX_WITHIN_YEAR_CONTRAST = 0.9
+# Year fixed-effects election multipliers (2020 ≈ 0.698, 2024 ≈ 0.621).
+MAX_FE_MULTIPLIER = 0.95
+# Phase 2 topic-cluster counts over the full usable set (sum = 68,453).
+EXPECTED_CLUSTER_COUNTS = {
+    "Other": 60_069,
+    "us_skepticism": 3_436,
+    "vaccine": 2_458,
+    "pre_election": 2_125,
+    "ccp_info_manipulation": 365,
+}
+CLUSTER_COUNT_REL_TOL = 0.02
+EXPECTED_OTHER_SHARE = 0.878
+OTHER_SHARE_TOL = 0.03
 
 
 # Fixtures
@@ -286,6 +334,134 @@ class TestHeadlineNReconciliation:
         n = ((windows_df["article_createdAt"] - E2024).abs() <= WIN).sum()
         assert 1_500 <= n <= 3_500, f"2024 window N drifted: {n}"
         print(f"\n[INFO] 2024 window N = {n}")
+
+
+# 6. Window-size robustness (Phase 1 sensitivity sweep)
+class TestWindowSensitivityRegression:
+    """The 2024/2020 slowdown is not an artefact of the ±90-day window: the
+    median ratio stays elevated across a 30–180 day sweep."""
+
+    @staticmethod
+    def _ratio(df, days):
+        win = pd.Timedelta(days=days)
+        e20 = df.loc[(df["article_createdAt"] - E2020).abs() <= win, "latency_hours"]
+        e24 = df.loc[(df["article_createdAt"] - E2024).abs() <= win, "latency_hours"]
+        return e24.median() / e20.median(), len(e20), len(e24)
+
+    def test_ratio_elevated_across_all_window_sizes(self, latency_df):
+        ratios = {}
+        for days in WINDOW_SIZES_DAYS:
+            ratio, n20, n24 = self._ratio(latency_df, days)
+            assert n20 >= 500 and n24 >= 500, (
+                f"{days}-day window too sparse: n2020={n20}, n2024={n24}"
+            )
+            ratios[days] = round(float(ratio), 2)
+        print(f"\n[INFO] window-size ratios (2024/2020): {ratios}")
+        assert min(ratios.values()) >= MIN_CROSS_ELECTION_RATIO, (
+            f"Slowdown collapses at some window size: {ratios}"
+        )
+        assert max(ratios.values()) <= MAX_CROSS_ELECTION_RATIO, (
+            f"Ratio implausibly large at some window size: {ratios}"
+        )
+
+
+# 7. Secular slowdown + election-window bright spots (the reframed thesis)
+class TestSecularSlowdownAndBrightSpots:
+    def test_per_year_median_shows_secular_slowdown(self, latency_df):
+        pym = per_year_median(latency_df)
+        pym.index = pym.index.astype(int)
+        assert YEAR_FAST_FLOOR in pym.index and YEAR_PEAK in pym.index, (
+            f"Expected years missing from per-year median: {sorted(pym.index)}"
+        )
+        floor = float(pym.loc[YEAR_FAST_FLOOR])
+        peak = float(pym.loc[YEAR_PEAK])
+        print(f"\n[INFO] per-year median (h): {pym.round(1).to_dict()}")
+        assert floor <= YEAR_FLOOR_MAX_MEDIAN_H, (
+            f"{YEAR_FAST_FLOOR} median {floor:.1f} h above floor cap "
+            f"{YEAR_FLOOR_MAX_MEDIAN_H}."
+        )
+        assert peak >= YEAR_PEAK_MIN_MEDIAN_H, (
+            f"{YEAR_PEAK} median {peak:.1f} h below expected peak "
+            f"{YEAR_PEAK_MIN_MEDIAN_H}."
+        )
+        assert peak > SECULAR_PEAK_OVER_FLOOR_MIN * floor, (
+            f"Secular slowdown {YEAR_FAST_FLOOR}→{YEAR_PEAK} not present "
+            f"(peak {peak:.1f} h vs floor {floor:.1f} h)."
+        )
+
+    def test_2020_election_window_is_a_bright_spot(self, latency_df):
+        c = within_year_election_contrast(latency_df, E2020)
+        print(f"\n[INFO] 2020 window/baseline = {c['window_over_baseline']:.3f}")
+        assert c["window_over_baseline"] < MAX_WITHIN_YEAR_CONTRAST, (
+            "2020 election window is not faster than its same-year baseline."
+        )
+
+    def test_2024_election_window_is_a_bright_spot(self, latency_df):
+        c = within_year_election_contrast(latency_df, E2024)
+        print(f"\n[INFO] 2024 window/baseline = {c['window_over_baseline']:.3f}")
+        assert c["window_over_baseline"] < MAX_WITHIN_YEAR_CONTRAST, (
+            "2024 election window is not faster than its same-year baseline."
+        )
+
+    def test_2024_window_is_relatively_brighter_than_2020(self, latency_df):
+        c20 = within_year_election_contrast(latency_df, E2020)["window_over_baseline"]
+        c24 = within_year_election_contrast(latency_df, E2024)["window_over_baseline"]
+        assert c24 < c20, (
+            f"2024 contrast {c24:.3f} not below 2020 contrast {c20:.3f}."
+        )
+
+    def test_election_effect_survives_year_fixed_effects(self, latency_df):
+        m = loglinear_election_effect_year_fe(latency_df)
+        print(
+            f"\n[INFO] year-FE multipliers: early(2020)={m['early_multiplier']:.3f}, "
+            f"late(2024)={m['late_multiplier']:.3f}"
+        )
+        assert m["early_multiplier"] < MAX_FE_MULTIPLIER, (
+            "2020 election effect vanished after year fixed effects."
+        )
+        assert m["late_multiplier"] < MAX_FE_MULTIPLIER, (
+            "2024 election effect vanished after year fixed effects."
+        )
+
+
+# 8. Topic-cluster distribution (Phase 2)
+class TestClusterRegression:
+    """Lock the Phase 2 cluster mix. Defensive: the processed latency CSV may
+    not carry a topic_cluster column in every pipeline build, so skip cleanly
+    when it is absent rather than failing."""
+
+    def test_full_set_cluster_counts_locked(self, latency_df):
+        if "topic_cluster" not in latency_df.columns:
+            pytest.skip("latency CSV has no topic_cluster column.")
+        counts = latency_df["topic_cluster"].value_counts()
+        print(f"\n[INFO] cluster counts: {counts.to_dict()}")
+        for cluster, expected in EXPECTED_CLUSTER_COUNTS.items():
+            actual = int(counts.get(cluster, 0))
+            assert actual == pytest.approx(expected, rel=CLUSTER_COUNT_REL_TOL), (
+                f"Cluster '{cluster}' count {actual} drifted from {expected} "
+                f"(rel tol {CLUSTER_COUNT_REL_TOL})."
+            )
+
+    def test_other_share_dominant_full_set(self, latency_df):
+        if "topic_cluster" not in latency_df.columns:
+            pytest.skip("latency CSV has no topic_cluster column.")
+        share = (latency_df["topic_cluster"] == "Other").mean()
+        assert abs(share - EXPECTED_OTHER_SHARE) <= OTHER_SHARE_TOL, (
+            f"Other share {share:.3f} drifted from {EXPECTED_OTHER_SHARE} "
+            f"± {OTHER_SHARE_TOL}."
+        )
+
+    def test_every_substantive_cluster_present_and_ordered(self, latency_df):
+        if "topic_cluster" not in latency_df.columns:
+            pytest.skip("latency CSV has no topic_cluster column.")
+        counts = latency_df["topic_cluster"].value_counts()
+        for cluster in CLUSTERS:  # the four substantive clusters
+            assert int(counts.get(cluster, 0)) > 0, f"Cluster '{cluster}' absent."
+        assert counts.idxmax() == "Other", "'Other' is no longer the largest cluster."
+        substantive = counts.drop(labels=["Other"], errors="ignore")
+        assert substantive.idxmax() == "us_skepticism", (
+            "us_skepticism is no longer the largest substantive cluster."
+        )
 
 
 if __name__ == "__main__":
