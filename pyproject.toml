@@ -16,11 +16,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Streamlit dashboard runtime. Mirrors requirements.txt (used by Streamlit Cloud).
-app = [
-    "streamlit>=1.30",
-    "plotly>=5.18",
-]
 # Heavy embedding + clustering stack — only needed by scripts/05_cluster_articles.py.
 ml = [
     "scikit-learn",
@@ -36,9 +31,16 @@ notebooks = [
 ]
 
 [dependency-groups]
-# Installed by default on `uv sync`; kept out of the published deps.
+# Installed by default on `uv sync` (see [tool.uv] default-groups); kept out of
+# the published package metadata.
 dev = [
     "pytest>=8.0",
+]
+# Streamlit dashboard runtime for local `streamlit run`. The deployed dashboard
+# on Streamlit Community Cloud installs from app/requirements.txt, not from here.
+app = [
+    "streamlit>=1.30",
+    "plotly>=5.18",
 ]
 
 [build-system]
@@ -49,14 +51,12 @@ build-backend = "hatchling.build"
 packages = ["src/narrative_latency"]
 
 [tool.uv]
-# Streamlit Community Cloud resolves dependencies with uv whenever a uv.lock
-# is present, and a plain `uv sync` installs only the core deps + the dev
-# group — it does NOT install optional-dependency extras. That left the
-# deployed dashboard without plotly/streamlit (ModuleNotFoundError at
-# `import plotly.express`). Installing the `app` extra by default fixes the
-# Cloud deploy while keeping the optional-dependencies layout intact:
-# `uv sync --extra app` and `uv sync --extra ml` still work as before.
-default-extras = ["app"]
+# Install the dev + app dependency groups by default on a plain `uv sync`, so a
+# fresh clone (and the CI runner) gets pytest and the Streamlit runtime without
+# extra flags. Using dependency groups instead of `default-extras` keeps this
+# compatible across uv versions — older uv rejects the `default-extras` key.
+# The ml / notebooks extras stay opt-in via `uv sync --extra ml` etc.
+default-groups = ["dev", "app"]
 
 [tool.pytest.ini_options]
 # Make the src/ package importable in tests without requiring an editable install.
