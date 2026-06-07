@@ -7,7 +7,7 @@ requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Natalia Harzu" }]
 
-# Core analysis stack — everything scripts 01–04 + the test suite need.
+# Core analysis stack - everything scripts 01-04 + the test suite need.
 dependencies = [
     "pandas>=2.0",
     "numpy",
@@ -16,13 +16,18 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Heavy embedding + clustering stack — only needed by scripts/05_cluster_articles.py.
+# Heavy embedding + clustering stack - only needed by scripts/05_cluster_articles.py.
 ml = [
     "scikit-learn",
     "sentence-transformers",
     "torch",
     "umap-learn",
     "hdbscan",
+]
+# Survival analysis (Phase 5): Kaplan-Meier + Cox PH. Lightweight and kept
+# opt-in so the default CI install and the heavy ml/torch stack are unaffected.
+survival = [
+    "lifelines>=0.27",
 ]
 # Notebook authoring / jupytext sync.
 notebooks = [
@@ -54,8 +59,8 @@ packages = ["src/narrative_latency"]
 # Install the dev + app dependency groups by default on a plain `uv sync`, so a
 # fresh clone (and the CI runner) gets pytest and the Streamlit runtime without
 # extra flags. Using dependency groups instead of `default-extras` keeps this
-# compatible across uv versions — older uv rejects the `default-extras` key.
-# The ml / notebooks extras stay opt-in via `uv sync --extra ml` etc.
+# compatible across uv versions - older uv rejects the `default-extras` key.
+# The ml / notebooks / survival extras stay opt-in via `uv sync --extra ml` etc.
 default-groups = ["dev", "app"]
 
 [tool.pytest.ini_options]
