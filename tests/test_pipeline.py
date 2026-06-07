@@ -108,6 +108,9 @@ EXPECTED_CLUSTER_COUNTS = {
 CLUSTER_COUNT_REL_TOL = 0.02
 EXPECTED_OTHER_SHARE = 0.878
 OTHER_SHARE_TOL = 0.03
+# Text columns the keyword tagger can run on when the processed CSV has no
+# precomputed topic_cluster column. Phase 2 was built from text_preview.
+TEXT_COLUMN_CANDIDATES = ["text_preview", "text", "article_text", "articleText"]
 
 
 # Fixtures
@@ -139,6 +142,29 @@ def windows_df() -> pd.DataFrame:
         pytest.skip(f"Missing {WINDOWS_CSV}; run scripts/03_election_windows.py first.")
     df = pd.read_csv(WINDOWS_CSV)
     df["article_createdAt"] = parse_dates_safe(df["article_createdAt"])
+    return df
+
+
+@pytest.fixture(scope="module")
+def clustered_df(latency_df) -> pd.DataFrame:
+    """latency_df guaranteed to carry a topic_cluster column.
+
+    If the processed CSV already provides topic_cluster, use it as-is.
+    Otherwise derive it by applying the keyword tagger to the article text
+    column — the same lightweight approach used to build the Phase 2 figures.
+    Skips cleanly if neither a topic_cluster nor a known text column exists.
+    """
+    if "topic_cluster" in latency_df.columns:
+        return latency_df
+    text_col = next(
+        (c for c in TEXT_COLUMN_CANDIDATES if c in latency_df.columns), None
+    )
+    if text_col is None:
+        pytest.skip(
+            "No topic_cluster column and no known text column to derive it from."
+        )
+    df = latency_df.copy()
+    df["topic_cluster"] = df[text_col].apply(tag)
     return df
 
 
@@ -426,14 +452,13 @@ class TestSecularSlowdownAndBrightSpots:
 
 # 8. Topic-cluster distribution (Phase 2)
 class TestClusterRegression:
-    """Lock the Phase 2 cluster mix. Defensive: the processed latency CSV may
-    not carry a topic_cluster column in every pipeline build, so skip cleanly
-    when it is absent rather than failing."""
+    """Lock the Phase 2 cluster mix. topic_cluster comes from the processed CSV
+    when present, else is derived by applying tag() to the text preview (see
+    the clustered_df fixture). Skips cleanly when no text source is available.
+    """
 
-    def test_full_set_cluster_counts_locked(self, latency_df):
-        if "topic_cluster" not in latency_df.columns:
-            pytest.skip("latency CSV has no topic_cluster column.")
-        counts = latency_df["topic_cluster"].value_counts()
+    def test_full_set_cluster_counts_locked(self, clustered_df):
+        counts = clustered_df["topic_cluster"].value_counts()
         print(f"\n[INFO] cluster counts: {counts.to_dict()}")
         for cluster, expected in EXPECTED_CLUSTER_COUNTS.items():
             actual = int(counts.get(cluster, 0))
@@ -442,19 +467,15 @@ class TestClusterRegression:
                 f"(rel tol {CLUSTER_COUNT_REL_TOL})."
             )
 
-    def test_other_share_dominant_full_set(self, latency_df):
-        if "topic_cluster" not in latency_df.columns:
-            pytest.skip("latency CSV has no topic_cluster column.")
-        share = (latency_df["topic_cluster"] == "Other").mean()
+    def test_other_share_dominant_full_set(self, clustered_df):
+        share = (clustered_df["topic_cluster"] == "Other").mean()
         assert abs(share - EXPECTED_OTHER_SHARE) <= OTHER_SHARE_TOL, (
             f"Other share {share:.3f} drifted from {EXPECTED_OTHER_SHARE} "
             f"± {OTHER_SHARE_TOL}."
         )
 
-    def test_every_substantive_cluster_present_and_ordered(self, latency_df):
-        if "topic_cluster" not in latency_df.columns:
-            pytest.skip("latency CSV has no topic_cluster column.")
-        counts = latency_df["topic_cluster"].value_counts()
+    def test_every_substantive_cluster_present_and_ordered(self, clustered_df):
+        counts = clustered_df["topic_cluster"].value_counts()
         for cluster in CLUSTERS:  # the four substantive clusters
             assert int(counts.get(cluster, 0)) > 0, f"Cluster '{cluster}' absent."
         assert counts.idxmax() == "Other", "'Other' is no longer the largest cluster."
