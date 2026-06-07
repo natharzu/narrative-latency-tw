@@ -1,6 +1,4 @@
 .DS_Store
-# Cofacts local snapshot (re-download from HF if needed; see data/raw/SOURCES.md)
-data/raw/cofacts/
 __pycache__/
 *.pyc
 .pytest_cache/
@@ -11,5 +9,10 @@ data/processed/cofacts_topic_classified.csv
 data/processed/embeddings.npy
 data/processed/embeddings_idx.npy
 
-# Raw data dumps (download separately, see README)
-data/raw/
+# Raw data: commit the Cofacts source zips for reproducibility,
+# ignore everything else under data/raw/
+data/raw/*
+!data/raw/cofacts/
+data/raw/cofacts/*
+!data/raw/cofacts/*.csv.zip
+!data/raw/SOURCES.md
