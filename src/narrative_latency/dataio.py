@@ -23,10 +23,20 @@ def reconstruct_article_dates(df):
 
 
 def cast_bool_columns(df, columns):
-    """Restore object -> bool after CSV roundtrip."""
+    """Restore string/object -> bool after CSV roundtrip.
+
+    A boolean column written to CSV comes back as the strings 'True'/'False'.
+    Depending on the installed pandas version it loads as either the legacy
+    ``object`` dtype or (pandas >= 3.0) the dedicated ``str`` dtype, so we must
+    not gate the conversion on ``dtype == object``. Any non-bool column is
+    coerced: case-insensitive 'true' -> True, everything else -> False.
+    """
     for col in columns:
-        if col in df.columns and df[col].dtype == object:
-            df[col] = df[col].astype(str).str.lower().eq("true")
+        if col not in df.columns:
+            continue
+        if df[col].dtype == bool:
+            continue
+        df[col] = df[col].astype(str).str.lower().eq("true")
     return df
 
 
