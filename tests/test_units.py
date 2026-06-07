@@ -154,10 +154,21 @@ class TestAssignWindow:
 class TestClusterTaxonomy:
     def test_expected_cluster_keys(self):
         assert set(CLUSTERS) == {
+            # original IORG clusters
             "vaccine",
             "us_skepticism",
             "pre_election",
             "ccp_info_manipulation",
+            # Option 4 topic categories
+            "scam",
+            "health",
+            "traffic",
+            "energy",
+            "pension",
+            "food_safety",
+            "lgbtq",
+            "disaster",
+            "international",
         }
 
     def test_no_empty_keyword_lists(self):
