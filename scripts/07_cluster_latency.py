@@ -35,6 +35,7 @@ from narrative_latency import (
 )
 
 CSV = PROC / "cofacts_latency.csv"
+# Fallback text column for CSVs that predate the full-text column (Option 0).
 TEXT_COL = "text_preview"
 
 
@@ -52,7 +53,9 @@ def load() -> pd.DataFrame:
     if missing.any():
         df.loc[missing, "article_createdAt"] = reconstruct_article_dates(df.loc[missing])
     df = df.dropna(subset=["article_createdAt"])
-    df["narrative"] = df[TEXT_COL].apply(tag)
+    # Tag on FULL text when available (Option 0); fall back to the preview.
+    text_col = "text" if "text" in df.columns else TEXT_COL
+    df["narrative"] = df[text_col].apply(tag)
     return df
 
 

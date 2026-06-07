@@ -41,6 +41,7 @@ from narrative_latency import (
 
 CLUSTERED = PROC / "cofacts_clustered.csv"
 PROFILES = PROC / "cluster_profiles.csv"
+# Fallback text column for CSVs that predate the full-text column (Option 0).
 TEXT_COL = "text_preview"
 TOP_N = 20
 
@@ -97,8 +98,10 @@ def load() -> pd.DataFrame:
     df["cluster_id"] = pd.to_numeric(df["cluster_id"], errors="coerce")
     df = df.dropna(subset=["cluster_id"])
     df["cluster_id"] = df["cluster_id"].astype(int)
-    # Reproduce the Phase 2 keyword bucketing so we can isolate "Other".
-    df["narrative"] = df[TEXT_COL].apply(tag)
+    # Reproduce the keyword bucketing so we can isolate "Other".
+    # Prefer FULL text (Option 0); fall back to the preview for older CSVs.
+    text_col = "text" if "text" in df.columns else TEXT_COL
+    df["narrative"] = df[text_col].apply(tag)
     return df
 
 
