@@ -65,9 +65,16 @@ print(f"Dropped {before - len(joined):,} rows with invalid latency (<0 or >1yr)"
 # Focus on TEXT articles
 joined = joined[joined["articleType"] == "TEXT"].copy()
 
-# Trim text for storage (full text not needed downstream)
-joined["text_preview"] = joined["text"].astype(str).str.slice(0, 200)
-joined = joined.drop(columns=["text"])
+# Keep BOTH full text and a short preview:
+#   * `text`         -> full article body, used for keyword tagging (`tag`) and
+#                       c-TF-IDF cluster labels. Substring search over the full
+#                       body is what keeps real topics out of the "Other"
+#                       bucket; a keyword past char 200 of the preview is
+#                       invisible.
+#   * `text_preview` -> first 200 chars, kept for quick display and as the
+#                       stable baseline the regression tests pin.
+joined["text"] = joined["text"].astype(str)
+joined["text_preview"] = joined["text"].str.slice(0, 200)
 
 print(f"Final dataset: {len(joined):,} article-reply pairs")
 print(f"  Date range: {joined['article_createdAt'].min()} -> {joined['article_createdAt'].max()}")
