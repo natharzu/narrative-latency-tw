@@ -29,10 +29,9 @@ usable snapshot):
     - The cross-election ratio is not a window-size artefact (stable across a
       30–180 day sweep).
     - After Option 4 (2026-06) the keyword taxonomy carries 13 topic
-      categories. The live 07/08 scripts tag the full article body ('Other'
-      ≈70%); the regression fixture below tags the stored text_preview, which
-      reproduces 'Other' ≈73% and a near-tie at the top among health,
-      us_skepticism, vaccine, scam and pre_election.
+      categories tagged on the full article body, shrinking 'Other' from
+      ≈88% (pre-Option-0) to ≈70%. us_skepticism is the largest substantive
+      cluster, followed closely by health, vaccine, scam and pre_election.
 
 These golden values are pinned with tolerances. Run locally against your CSV;
 if a value legitimately moved (e.g. a re-pull), update the constant rather than
@@ -100,34 +99,36 @@ SECULAR_PEAK_OVER_FLOOR_MIN = 8.0
 MAX_WITHIN_YEAR_CONTRAST = 0.9
 # Year fixed-effects election multipliers (2020 ≈ 0.698, 2024 ≈ 0.621).
 MAX_FE_MULTIPLIER = 0.95
-# Topic-cluster counts as reproduced by the regression fixture below: the
-# Option 4 taxonomy applied to the stored text_preview (cofacts_latency.csv has
-# no full-text column), locked 2026-06, sum = 68,533. The live 07/08 scripts tag
-# the full body and therefore report a smaller 'Other' (≈70%). Re-pin these if
-# the taxonomy or processed CSV legitimately changes, don't loosen the tolerance.
+# Topic-cluster counts over the full set, as reproduced by the regression
+# fixture below: the Option 4 taxonomy applied to the full article `text`
+# column. cofacts_latency.csv carries both `text` (full body) and
+# `text_preview`; the fixture prefers full `text`, matching the live 07/08
+# scripts, so 'Other' lands at ≈70%. Locked 2026-06, sum = 68,533. Re-pin
+# these if the taxonomy or processed CSV legitimately changes rather than
+# loosening the tolerance.
 EXPECTED_CLUSTER_COUNTS = {
-    "Other": 50_278,
-    "health": 3_487,
-    "us_skepticism": 3_410,
-    "vaccine": 2_425,
-    "pre_election": 2_338,
-    "scam": 2_310,
-    "traffic": 931,
-    "pension": 818,
-    "energy": 541,
-    "food_safety": 498,
-    "disaster": 477,
-    "lgbtq": 379,
-    "ccp_info_manipulation": 348,
-    "international": 293,
+    "Other": 47_995,
+    "us_skepticism": 4_156,
+    "health": 3_913,
+    "vaccine": 2_817,
+    "scam": 2_656,
+    "pre_election": 2_621,
+    "traffic": 1_007,
+    "pension": 831,
+    "energy": 551,
+    "food_safety": 508,
+    "disaster": 488,
+    "lgbtq": 370,
+    "ccp_info_manipulation": 355,
+    "international": 265,
 }
 CLUSTER_COUNT_REL_TOL = 0.02
-EXPECTED_OTHER_SHARE = 0.734
+EXPECTED_OTHER_SHARE = 0.700
 OTHER_SHARE_TOL = 0.03
 # Text columns the keyword tagger can run on when the processed CSV has no
-# precomputed topic_cluster column. cofacts_latency.csv currently carries only
-# text_preview; "text" is listed first so a future full-text CSV is preferred
-# automatically.
+# precomputed topic_cluster column. cofacts_latency.csv carries both `text`
+# (full body) and `text_preview`; prefer full `text` so the fixture matches
+# the live 07/08 tagging.
 TEXT_COLUMN_CANDIDATES = ["text", "text_preview", "article_text", "articleText"]
 
 
@@ -169,9 +170,9 @@ def clustered_df(latency_df) -> pd.DataFrame:
 
     If the processed CSV already provides topic_cluster, use it as-is.
     Otherwise derive it by applying the keyword tagger to the available article
-    text column — the same lightweight approach the live 07/08 scripts use
-    (cofacts_latency.csv currently exposes text_preview). Skips cleanly if
-    neither a topic_cluster nor a known text column exists.
+    text column — preferring the full `text` body, the same column the live
+    07/08 scripts tag. Skips cleanly if neither a topic_cluster nor a known
+    text column exists.
     """
     if "topic_cluster" in latency_df.columns:
         return latency_df
@@ -378,7 +379,7 @@ class TestClusterTagger:
         if "topic_cluster" not in windows_df.columns:
             pytest.skip("cofacts_election_windows.csv missing topic_cluster.")
         # The windows CSV's topic_cluster may predate Option 4 (≈88% Other) or
-        # be regenerated under it (≈70–73%); accept either as long as 'Other'
+        # be regenerated under it (≈70%); accept either as long as 'Other'
         # is still the dominant bucket.
         other_share = (windows_df["topic_cluster"] == "Other").mean()
         assert 0.60 <= other_share <= 0.95
@@ -488,9 +489,9 @@ class TestSecularSlowdownAndBrightSpots:
 # 8. Topic-cluster distribution (Option 4 taxonomy)
 class TestClusterRegression:
     """Lock the Option 4 cluster mix. topic_cluster comes from the processed CSV
-    when present, else is derived by applying tag() to the stored article text
-    column (currently text_preview; see the clustered_df fixture). Skips cleanly
-    when no text source is available.
+    when present, else is derived by applying tag() to the full article `text`
+    column (see the clustered_df fixture). Skips cleanly when no text source is
+    available.
     """
 
     def test_full_set_cluster_counts_locked(self, clustered_df):
@@ -515,9 +516,9 @@ class TestClusterRegression:
         for cluster in CLUSTERS:  # every taxonomy category should appear
             assert int(counts.get(cluster, 0)) > 0, f"Cluster '{cluster}' absent."
         assert counts.idxmax() == "Other", "'Other' is no longer the largest cluster."
-        # Post Option 4 the top substantive clusters (health, us_skepticism,
-        # vaccine, scam, pre_election) are a near-tie, so we don't hard-code the
-        # winner; we just require several substantive clusters carry real mass.
+        # us_skepticism is the largest substantive cluster, but the top few
+        # (health, vaccine, scam, pre_election) are close, so we don't hard-code
+        # the winner; we just require several substantive clusters carry real mass.
         substantive = counts.drop(labels=["Other"], errors="ignore")
         assert (substantive >= 1_000).sum() >= 4, (
             "Expected at least four substantive clusters with ≥ 1,000 rows."
