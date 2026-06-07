@@ -39,7 +39,7 @@ dev = [
 # Streamlit dashboard runtime for local `streamlit run`. The deployed dashboard
 # on Streamlit Community Cloud installs from app/requirements.txt, not from here.
 app = [
-    "streamlit>=1.30",
+    "streamlit>=1.49",
     "plotly>=5.18",
 ]
 
