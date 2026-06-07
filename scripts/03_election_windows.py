@@ -74,13 +74,14 @@ if len(e24_r) > 0 and e20_r.median() > 0:
 print("If ratio is close to the full-sample ratio, the slowdown is robust to survivorship.")
 
 # ============================================================
-# 4. CLUSTER TAGGING (keyword-based on text_preview)
+# 4. CLUSTER TAGGING (keyword-based; prefers full text, falls back to preview)
 # ============================================================
-df["topic_cluster"] = df["text_preview"].apply(tag)
+text_col = "text" if "text" in df.columns else "text_preview"
+df["topic_cluster"] = df[text_col].apply(tag)
 
 print()
 print("=" * 60)
-print("BY CLUSTER (keyword-tagged on text_preview)")
+print(f"BY CLUSTER (keyword-tagged on {text_col})")
 print("=" * 60)
 by_cluster = df.groupby("topic_cluster")["latency_hours"].agg(["count", "median"]).round(1)
 print(by_cluster.sort_values("median"))
