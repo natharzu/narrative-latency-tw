@@ -1,7 +1,7 @@
 """08_cluster_latency_hdbscan.py -- crack open the keyword "Other" bucket.
 
 Phase 2 (scripts/07_cluster_latency.py) tags articles with the hand-written
-keyword taxonomy (``CLUSTERS`` / ``tag``), which leaves ~88%% of volume in a
+keyword taxonomy (``CLUSTERS`` / ``tag``), which leaves ~88% of volume in a
 single "Other" bucket. scripts/05_cluster_articles.py already discovered
 data-driven semantic clusters and saved them to ``cofacts_clustered.csv`` +
 ``cluster_profiles.csv`` -- but that output was never wired into the latency
@@ -112,7 +112,7 @@ def _cluster_row(sub, cid, labels, total):
         "cluster_id": cid,
         "label": label_for(cid, labels)[:45],
         "n": len(sub),
-        "share_%%": _round(100 * len(sub) / total) if total else None,
+        "share_%": _round(100 * len(sub) / total) if total else None,
         "median_h": _round(sub["latency_hours"].median()),
         "med_2020_h": _round(m2020),
         "med_2024_h": _round(m2024),
@@ -139,7 +139,7 @@ def main() -> None:
     n_other = len(other)
     pct = (100 * n_other / total) if total else 0.0
     print(
-        f"== Keyword 'Other' = {n_other:,} rows ({pct:.1f}%%). "
+        f"== Keyword 'Other' = {n_other:,} rows ({pct:.1f}%). "
         "Decomposing it by HDBSCAN cluster ==\n"
     )
 
