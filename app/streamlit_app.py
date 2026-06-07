@@ -115,7 +115,7 @@ fig_tl.add_vrect(x0=2023.5, x1=2024.5, fillcolor="#f59e0b", opacity=0.18, line_w
 fig_tl.update_layout(template=TPL, title="Median response time by year (Cofacts community)",
                      xaxis_title="Year", yaxis_title="Median latency (hours)", height=360,
                      margin=dict(t=60, b=40))
-st.plotly_chart(fig_tl, use_container_width=True)
+st.plotly_chart(fig_tl, width="stretch")
 
 # ============ SLA ============
 st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
@@ -144,7 +144,7 @@ with c2:
     gauge.update_layout(barmode="stack", template=TPL, height=140, showlegend=False,
                         xaxis=dict(range=[0, 100], showticklabels=False, showgrid=False),
                         yaxis=dict(showticklabels=False), margin=dict(t=10, b=10, l=10, r=10))
-    st.plotly_chart(gauge, use_container_width=True)
+    st.plotly_chart(gauge, width="stretch")
 
 # Cumulative response curve
 sorted_lat = df["latency_hours"].sort_values().reset_index(drop=True)
@@ -160,7 +160,7 @@ fig_cdf.add_hline(y=pct_under, line_dash="dot", line_color="white", opacity=0.5)
 fig_cdf.update_layout(template=TPL, title="Cumulative response curve",
                       xaxis_title="Hours since article posted", yaxis_title="% of rumors responded to",
                       height=360, margin=dict(t=50, b=40))
-st.plotly_chart(fig_cdf, use_container_width=True)
+st.plotly_chart(fig_cdf, width="stretch")
 
 # ============ ELECTION CYCLES ============
 st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
@@ -178,7 +178,7 @@ with a:
                          margin=dict(t=50, b=40), showlegend=False)
     fig20.update_xaxes(title="Latency (hours)", tickvals=[-1,0,1,2,3,4],
                        ticktext=["0.1h","1h","10h","100h","1000h","10000h"])
-    st.plotly_chart(fig20, use_container_width=True)
+    st.plotly_chart(fig20, width="stretch")
 with b:
     log24 = np.log10(df_2024["latency_hours"].clip(lower=0.01))
     fig24 = px.histogram(x=log24, nbins=40, color_discrete_sequence=["#f59e0b"])
@@ -189,7 +189,7 @@ with b:
                          margin=dict(t=50, b=40), showlegend=False)
     fig24.update_xaxes(title="Latency (hours)", tickvals=[-1,0,1,2,3,4],
                        ticktext=["0.1h","1h","10h","100h","1000h","10000h"])
-    st.plotly_chart(fig24, use_container_width=True)
+    st.plotly_chart(fig24, width="stretch")
 
 st.markdown("### The volume paradox")
 p1, p2 = st.columns(2)
@@ -241,7 +241,7 @@ fig_heat = px.imshow(heat, color_continuous_scale="Inferno", aspect="auto",
                      labels=dict(x="Hour (Taipei)", y="", color="Articles"))
 fig_heat.update_layout(template=TPL, height=340, title="Article submission volume",
                        margin=dict(t=50, b=40))
-st.plotly_chart(fig_heat, use_container_width=True)
+st.plotly_chart(fig_heat, width="stretch")
 st.caption("Volume concentrates in weekday evenings (Taipei time) — Cofacts community capacity needs to match that pattern.")
 
 # ============ PERCENTILE DRILL-DOWN ============
@@ -256,7 +256,7 @@ fig_p = px.bar(pct_yr, x="year", y="latency_hours", color="latency_hours",
                color_continuous_scale="Reds", labels={"latency_hours": f"P{p_pick} (hours)"})
 fig_p.update_layout(template=TPL, title=f"P{p_pick} response time by year", height=360,
                     margin=dict(t=50, b=40), coloraxis_showscale=False)
-st.plotly_chart(fig_p, use_container_width=True)
+st.plotly_chart(fig_p, width="stretch")
 
 # ============ CLUSTER ANALYSIS ============
 st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
@@ -291,7 +291,7 @@ else:
         st.image(
             str(umap_img),
             caption="Global cluster map — 2D UMAP projection of article embeddings, colored by HDBSCAN cluster.",
-            use_container_width=True,
+            width="stretch",
         )
 
     # ----- 2. Cluster profiles table (global, top 40 by size; bilingual)
@@ -318,7 +318,7 @@ else:
             "pct_2024_win":     st.column_config.NumberColumn("% 2024 win", format="%.1f%%"),
         },
         hide_index=True,
-        use_container_width=True,
+        width="stretch",
         height=440,
     )
 
@@ -359,7 +359,7 @@ else:
         yaxis=dict(autorange="reversed", tickfont=dict(size=12)),
         legend_title_text="Topic",
     )
-    st.plotly_chart(fig_c, use_container_width=True)
+    st.plotly_chart(fig_c, width="stretch")
 
     # ----- 4. Annotated slow-clusters static image
     slow_img = VIZ / "clusters_slow.png"
@@ -367,7 +367,7 @@ else:
         st.image(
             str(slow_img),
             caption="Annotated UMAP — slowest 2024-window clusters highlighted.",
-            use_container_width=True,
+            width="stretch",
         )
 
 
