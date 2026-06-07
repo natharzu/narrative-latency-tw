@@ -84,22 +84,28 @@ else:
 print(f"  Embeddings: {embeddings.shape}")
 
 # 2. UMAP
+# low_memory=True keeps the nearest-neighbour graph from ballooning RAM on a
+# constrained box. random_state already forces single-threaded execution.
 print("→ UMAP → 10D for clustering…")
 emb_10d = umap.UMAP(
     n_components=10, n_neighbors=15, min_dist=0.0,
-    metric="cosine", random_state=42, verbose=False,
+    metric="cosine", random_state=42, low_memory=True, verbose=False,
 ).fit_transform(embeddings)
 
 print("→ UMAP → 2D for viz…")
 emb_2d = umap.UMAP(
     n_components=2, n_neighbors=15, min_dist=0.1,
-    metric="cosine", random_state=42, verbose=False,
+    metric="cosine", random_state=42, low_memory=True, verbose=False,
 ).fit_transform(embeddings)
 
 # 3. HDBSCAN
+# core_dist_n_jobs=1: the default (4) spawns parallel workers that each
+# memory-map a copy of emb_10d; on a small Codespace that peak gets the
+# process OOM-killed mid-cluster. Single-threaded is a touch slower but fits.
 print("→ HDBSCAN clustering…")
 clusterer = hdbscan.HDBSCAN(
     min_cluster_size=80, min_samples=10, metric="euclidean",
+    core_dist_n_jobs=1,
 )
 labels = clusterer.fit_predict(emb_10d)
 n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
