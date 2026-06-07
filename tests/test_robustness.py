@@ -190,7 +190,7 @@ class TestNaNRobustness:
     def test_loglinear_fe_ignores_nan_rows(self):
         df = _trend_df()
         noisy = pd.concat(
-            [df, pd.DataFrame({"article_createdAt": [pd.NaT], "latency_hours": [99.0]})],
+            [df, pd.DataFrame({"article_createdAt": _ts(pd.NaT), "latency_hours": [99.0]})],
             ignore_index=True,
         )
         a = loglinear_election_effect_year_fe(df)
@@ -202,7 +202,7 @@ class TestNaNRobustness:
     def test_per_year_median_drops_nat_year(self):
         df = _trend_df()
         noisy = pd.concat(
-            [df, pd.DataFrame({"article_createdAt": [pd.NaT], "latency_hours": [99.0]})],
+            [df, pd.DataFrame({"article_createdAt": _ts(pd.NaT), "latency_hours": [99.0]})],
             ignore_index=True,
         )
         pym = per_year_median(noisy)
