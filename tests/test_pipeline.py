@@ -28,8 +28,10 @@ usable snapshot):
       (2020 ≈ 0.46×, 2024 ≈ 0.13×), and the effect survives year fixed effects.
     - The cross-election ratio is not a window-size artefact (stable across a
       30–180 day sweep).
-    - Topic mix is dominated by 'Other' (≈88%); the four substantive clusters
-      are us_skepticism > vaccine > pre_election > ccp_info_manipulation.
+    - After Option 4 (2026-06) the keyword taxonomy carries 13 topic
+      categories tagged on the full article body; 'Other' falls to ≈70%. The
+      largest substantive clusters are
+      us_skepticism > health > vaccine > scam > pre_election.
 
 These golden values are pinned with tolerances. Run locally against your CSV;
 if a value legitimately moved (e.g. a re-pull), update the constant rather than
@@ -97,20 +99,32 @@ SECULAR_PEAK_OVER_FLOOR_MIN = 8.0
 MAX_WITHIN_YEAR_CONTRAST = 0.9
 # Year fixed-effects election multipliers (2020 ≈ 0.698, 2024 ≈ 0.621).
 MAX_FE_MULTIPLIER = 0.95
-# Phase 2 topic-cluster counts over the full usable set (sum = 68,453).
+# Topic-cluster counts over the full set (Option 4 taxonomy, tagged on full
+# 'text'; locked 2026-06; sum = 68,533). Re-pin these if the taxonomy or the
+# processed CSV legitimately changes rather than loosening the tolerance.
 EXPECTED_CLUSTER_COUNTS = {
-    "Other": 60_069,
-    "us_skepticism": 3_436,
-    "vaccine": 2_458,
-    "pre_election": 2_125,
-    "ccp_info_manipulation": 365,
+    "Other": 47_995,
+    "us_skepticism": 4_156,
+    "health": 3_913,
+    "vaccine": 2_817,
+    "scam": 2_656,
+    "pre_election": 2_621,
+    "traffic": 1_007,
+    "pension": 831,
+    "energy": 551,
+    "food_safety": 508,
+    "disaster": 488,
+    "lgbtq": 370,
+    "ccp_info_manipulation": 355,
+    "international": 265,
 }
 CLUSTER_COUNT_REL_TOL = 0.02
-EXPECTED_OTHER_SHARE = 0.878
+EXPECTED_OTHER_SHARE = 0.70
 OTHER_SHARE_TOL = 0.03
 # Text columns the keyword tagger can run on when the processed CSV has no
-# precomputed topic_cluster column. Phase 2 was built from text_preview.
-TEXT_COLUMN_CANDIDATES = ["text_preview", "text", "article_text", "articleText"]
+# precomputed topic_cluster column. The live pipeline (post Option 0) tags on
+# the full article body, so prefer "text" and fall back to the preview.
+TEXT_COLUMN_CANDIDATES = ["text", "text_preview", "article_text", "articleText"]
 
 
 # Fixtures
@@ -151,7 +165,7 @@ def clustered_df(latency_df) -> pd.DataFrame:
 
     If the processed CSV already provides topic_cluster, use it as-is.
     Otherwise derive it by applying the keyword tagger to the article text
-    column — the same lightweight approach used to build the Phase 2 figures.
+    column — the same lightweight approach the live 07/08 scripts use.
     Skips cleanly if neither a topic_cluster nor a known text column exists.
     """
     if "topic_cluster" in latency_df.columns:
@@ -319,12 +333,25 @@ class TestClusterTagger:
     @pytest.mark.parametrize(
         "text,expected",
         [
+            # original four IORG clusters (ordering preserved under Option 4)
             ("AZ 疫苗副作用", "vaccine"),
             ("Pfizer booster question", "vaccine"),
             ("拜登政府 對台 政策", "us_skepticism"),
             ("Trump 2024 campaign rumor", "us_skepticism"),
             ("賴清德 當選 投票 結果", "pre_election"),
             ("習近平 訪美", "ccp_info_manipulation"),
+            # Option 4 categories
+            ("假投資 詐騙 飆股 群組", "scam"),
+            ("癌症 致癌 偏方 療法", "health"),
+            ("闖紅燈 機車 違規 罰單", "traffic"),
+            ("台電 宣布 停電 區域", "energy"),
+            ("退休 年金 公教 改革", "pension"),
+            ("萊豬 瘦肉精 進口", "food_safety"),
+            ("同性 婚姻 平權 愛滋", "lgbtq"),
+            ("颱風 豪雨 淹水", "disaster"),
+            ("烏克蘭 俄羅斯 戰爭", "international"),
+            ("公投 結果 出爐", "pre_election"),
+            # negatives
             ("今天天氣很好", "Other"),
             ("", "Other"),
             (None, "Other"),
@@ -345,8 +372,11 @@ class TestClusterTagger:
     def test_other_share_is_dominant(self, windows_df):
         if "topic_cluster" not in windows_df.columns:
             pytest.skip("cofacts_election_windows.csv missing topic_cluster.")
+        # The windows CSV's topic_cluster may predate Option 4 (≈88% Other) or
+        # be regenerated under it (≈70%); accept either as long as 'Other' is
+        # still the dominant bucket.
         other_share = (windows_df["topic_cluster"] == "Other").mean()
-        assert 0.75 <= other_share <= 0.95
+        assert 0.60 <= other_share <= 0.95
 
 
 # 5. Headline-N reconciliation
@@ -450,11 +480,12 @@ class TestSecularSlowdownAndBrightSpots:
         )
 
 
-# 8. Topic-cluster distribution (Phase 2)
+# 8. Topic-cluster distribution (Option 4 taxonomy)
 class TestClusterRegression:
-    """Lock the Phase 2 cluster mix. topic_cluster comes from the processed CSV
-    when present, else is derived by applying tag() to the text preview (see
-    the clustered_df fixture). Skips cleanly when no text source is available.
+    """Lock the Option 4 cluster mix. topic_cluster comes from the processed CSV
+    when present, else is derived by applying tag() to the full article text
+    (see the clustered_df fixture). Skips cleanly when no text source is
+    available.
     """
 
     def test_full_set_cluster_counts_locked(self, clustered_df):
@@ -476,7 +507,7 @@ class TestClusterRegression:
 
     def test_every_substantive_cluster_present_and_ordered(self, clustered_df):
         counts = clustered_df["topic_cluster"].value_counts()
-        for cluster in CLUSTERS:  # the four substantive clusters
+        for cluster in CLUSTERS:  # every taxonomy category should appear
             assert int(counts.get(cluster, 0)) > 0, f"Cluster '{cluster}' absent."
         assert counts.idxmax() == "Other", "'Other' is no longer the largest cluster."
         substantive = counts.drop(labels=["Other"], errors="ignore")
