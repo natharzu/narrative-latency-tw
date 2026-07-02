@@ -3,9 +3,10 @@ __pycache__/
 *.pyc
 .pytest_cache/
 
-# Large pipeline intermediates (regenerable from scripts 05 + 06)
+# Large pipeline intermediates (regenerable from scripts 05 + 06 + 06b)
 data/processed/cofacts_clustered.csv
 data/processed/cofacts_topic_classified.csv
+data/processed/cofacts_latency_topic.csv
 data/processed/embeddings.npy
 data/processed/embeddings_idx.npy
 
