@@ -99,6 +99,13 @@ def build_survival_frame(
     )
     df = df.merge(times, on="articleId", how="left")
 
+    # first_reply_times can return object-dtype reply-time columns when no
+    # replies match (e.g. every article filtered out, or empty reply frames).
+    # Under newer pandas, object - datetime64 raises instead of yielding an
+    # empty result, so normalize to tz-aware datetimes before the subtraction.
+    df["any_reply_at"] = pd.to_datetime(df["any_reply_at"], utc=True)
+    df["subst_reply_at"] = pd.to_datetime(df["subst_reply_at"], utc=True)
+
     censor_h = _hours(snapshot - df["article_createdAt"])
 
     any_lat = _hours(df["any_reply_at"] - df["article_createdAt"])
