@@ -29,6 +29,12 @@ ml = [
 survival = [
     "lifelines>=0.27",
 ]
+# LLM annotation (Phase 2): OpenAI-compatible client for the DeepSeek / Kimi /
+# GLM endpoints used by scripts/13_annotate.py. Kept opt-in so the default
+# uv sync and CI install stay light. Install with: uv sync --extra llm
+llm = [
+    "openai>=1.0",
+]
 # Notebook authoring / jupytext sync.
 notebooks = [
     "jupyter",
@@ -60,7 +66,7 @@ packages = ["src/narrative_latency"]
 # fresh clone (and the CI runner) gets pytest and the Streamlit runtime without
 # extra flags. Using dependency groups instead of `default-extras` keeps this
 # compatible across uv versions - older uv rejects the `default-extras` key.
-# The ml / notebooks / survival extras stay opt-in via `uv sync --extra ml` etc.
+# The ml / notebooks / survival / llm extras stay opt-in via `uv sync --extra ml` etc.
 default-groups = ["dev", "app"]
 
 [tool.pytest.ini_options]
