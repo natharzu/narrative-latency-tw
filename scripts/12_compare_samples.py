@@ -6,7 +6,11 @@ produced by scripts/11_sample500.py, and reports:
   * article overlap between the two samples (expected 0 — disjoint windows);
   * training-cutoff status (min/max dates; share after the model cutoff);
   * rule-vs-LLM annotation agreement per cohort, IF an LLM label column exists
-    yet (accuracy + Cohen's kappa); otherwise it says where that plugs in.
+    (accuracy + Cohen's kappa); otherwise it says where that plugs in.
+
+If scripts/13_annotate.py has been run, its labeled output
+(pilot500_labeled_<mode>.csv, which carries the llm_topic column) is loaded in
+preference to the raw sample, so the rule-vs-LLM section fills in automatically.
 
 The logic: the recent sample is entirely POST the model cutoff, so the model
 cannot have memorized it; the election sample is entirely PRE cutoff. If
@@ -14,11 +18,16 @@ rule-vs-LLM agreement is similar across the two, the annotation is robust to
 contamination. If it is markedly higher on the (seen) election sample, that is
 a memorization red flag — a sample-level complement to the item-level probes.
 
-Reads:  data/processed/sample500_elections.csv
+Reads:  data/processed/pilot500_labeled_elections.csv  (if present, else)
+        data/processed/sample500_elections.csv
+        data/processed/pilot500_labeled_recent.csv      (if present, else)
         data/processed/sample500_recent.csv
-        (produce both first:
+        (produce the samples first:
              uv run python scripts/11_sample500.py --mode elections
-             uv run python scripts/11_sample500.py --mode recent)
+             uv run python scripts/11_sample500.py --mode recent
+         then optionally annotate:
+             uv run python scripts/13_annotate.py --mode elections
+             uv run python scripts/13_annotate.py --mode recent)
 
 Usage:
     uv run python scripts/12_compare_samples.py
@@ -34,8 +43,14 @@ import pandas as pd
 
 from narrative_latency import PROC, parse_dates_safe
 
-ELE = PROC / "sample500_elections.csv"
-REC = PROC / "sample500_recent.csv"
+SAMPLES = {
+    "elections": PROC / "sample500_elections.csv",
+    "recent": PROC / "sample500_recent.csv",
+}
+LABELED = {
+    "elections": PROC / "pilot500_labeled_elections.csv",
+    "recent": PROC / "pilot500_labeled_recent.csv",
+}
 
 # Training cutoff assumed by the §2c contamination probes. Adjust to match the
 # annotating model's documented cutoff.
@@ -47,10 +62,13 @@ LLM_LABEL_CANDIDATES = [
 ]
 
 
-def load(path: Path, mode: str) -> pd.DataFrame:
+def load(mode: str) -> pd.DataFrame:
+    """Load a cohort, preferring the annotated file if scripts/13 has run."""
+    labeled, sample = LABELED[mode], SAMPLES[mode]
+    path = labeled if labeled.exists() else sample
     if not path.exists():
         raise SystemExit(
-            f"Missing {path}.\n"
+            f"Missing {sample}.\n"
             "Produce it first:\n"
             f"    uv run python scripts/11_sample500.py --mode {mode}"
         )
@@ -77,8 +95,8 @@ def find_llm_col(df: pd.DataFrame) -> str | None:
 
 
 def main() -> None:
-    ele = load(ELE, "elections")
-    rec = load(REC, "recent")
+    ele = load("elections")
+    rec = load("recent")
     both = pd.concat([ele, rec], ignore_index=True)
 
     print("=" * 60)
@@ -119,7 +137,9 @@ def main() -> None:
     llm_ele, llm_rec = find_llm_col(ele), find_llm_col(rec)
     if not llm_ele and not llm_rec:
         print(f"No LLM label column found yet (looked for {LLM_LABEL_CANDIDATES}).")
-        print("After §2 annotation, add that column to each sample and re-run:")
+        print("Annotate first, then re-run:")
+        print("    uv run python scripts/13_annotate.py --mode elections")
+        print("    uv run python scripts/13_annotate.py --mode recent")
         print("  - accuracy and Cohen's kappa are reported per cohort;")
         print("  - similar kappa across cohorts => annotation robust to contamination;")
         print("  - kappa notably higher on 'elections' (pre-cutoff) => memorization flag.")
@@ -128,9 +148,10 @@ def main() -> None:
         if not col:
             print(f"{name:<10} no LLM column")
             continue
-        acc = (df["rule_topic"].astype(str) == df[col].astype(str)).mean()
-        k = cohen_kappa(df["rule_topic"], df[col])
-        print(f"{name:<10} n={len(df):>4}  accuracy={acc:5.3f}  kappa={k:5.3f}")
+        d = df.dropna(subset=[col])
+        acc = (d["rule_topic"].astype(str) == d[col].astype(str)).mean()
+        k = cohen_kappa(d["rule_topic"], d[col])
+        print(f"{name:<10} n={len(d):>4}  accuracy={acc:5.3f}  kappa={k:5.3f}")
 
 
 if __name__ == "__main__":
