@@ -97,25 +97,60 @@ def popularity_by_narrative(d: pd.DataFrame, topic_col: str) -> pd.DataFrame:
 # --------------------------------------------------------------------------- #
 # IO wrappers
 # --------------------------------------------------------------------------- #
-def _read_raw(raw: Path, name: str) -> pd.DataFrame:
-    """Read <name>.csv.zip (repo convention, cf. 10_survival.py) or <name>.csv."""
+def _raw_path(raw: Path, name: str) -> Path:
+    """Locate <name>.csv.zip (repo convention, cf. 10_survival.py) or <name>.csv."""
     for fn in (f"{name}.csv.zip", f"{name}.csv"):
         p = raw / fn
         if p.exists():
-            return pd.read_csv(p)
+            return p
     raise FileNotFoundError(
         f"neither {name}.csv.zip nor {name}.csv in {raw} — download the "
         "Cofacts reply_requests / analytics open-data dumps first."
     )
 
 
+def _read_raw(raw: Path, name: str) -> pd.DataFrame:
+    return pd.read_csv(_raw_path(raw, name))
+
+
+def read_view_counts_streaming(raw: Path, chunksize: int = 1_000_000) -> pd.DataFrame:
+    """Aggregate analytics view counts in CHUNKS to bound peak memory.
+
+    analytics.csv.zip is ~161 MB zipped and expands to well over a GB of daily
+    rows; reading it whole gets the process OOM-killed on a Codespace with no
+    swap (silent EXIT=137/143, no traceback, no file). Streaming holds only one
+    chunk at a time and re-sums the per-chunk partial totals. Counts are read as
+    float32 and the key as NumPy object so the groupby uses fast Cython kernels.
+    """
+    path = _raw_path(raw, "analytics")
+    usecols = ["type", "docId", "lineVisit", "lineUser", "webVisit", "webUser"]
+    dtypes = {"type": "object", "docId": "object",
+              "lineVisit": "float32", "lineUser": "float32",
+              "webVisit": "float32", "webUser": "float32"}
+    parts = [build_view_counts(chunk) for chunk in
+             pd.read_csv(path, usecols=usecols, dtype=dtypes, chunksize=chunksize)]
+    if not parts:
+        return pd.DataFrame(columns=["articleId", "line_visits", "line_users",
+                                     "web_visits", "web_users"])
+    combined = pd.concat(parts, ignore_index=True)
+    return (combined.groupby("articleId", as_index=False)
+                    .agg(line_visits=("line_visits", "sum"),
+                         line_users=("line_users", "sum"),
+                         web_visits=("web_visits", "sum"),
+                         web_users=("web_users", "sum")))
+
+
 def build_popularity_table(raw: Path) -> pd.DataFrame:
-    rr = _read_raw(raw, "reply_requests")
-    an = _read_raw(raw, "analytics")
-    pop = merge_popularity(build_request_counts(rr), build_view_counts(an))
+    print("reading reply_requests ...", flush=True)
+    req = build_request_counts(_read_raw(raw, "reply_requests"))
+    print(f"  request counts for {len(req):,} articles", flush=True)
+    print("streaming analytics (chunked, low-memory) ...", flush=True)
+    views = read_view_counts_streaming(raw)
+    print(f"  view counts for {len(views):,} articles", flush=True)
+    pop = merge_popularity(req, views)
     PROC.mkdir(parents=True, exist_ok=True)
     pop.to_csv(POP_OUT, index=False, encoding="utf-8")
-    print(f"wrote {POP_OUT.relative_to(ROOT)}  rows={len(pop):,}")
+    print(f"wrote {POP_OUT.relative_to(ROOT)}  rows={len(pop):,}", flush=True)
     print(pop[["request_count", "line_visits", "web_visits"]].describe())
     return pop
 
