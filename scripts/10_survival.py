@@ -261,6 +261,7 @@ def main():
     )
     df = add_strata(df)
     df = attach_request_volume(df) 
+    df = attach_affect(df)
     print(f"Survival frame: {len(df):,} articles")
     print(f"  any-reply events:         {df['event_any'].sum():,} "
           f"({df['event_any'].mean():.1%}); censored "
