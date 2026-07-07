@@ -1,0 +1,2 @@
+data/raw/cofacts/analytics.csv.zip filter=lfs diff=lfs merge=lfs -text
+data/raw/cofacts/reply_requests.csv.zip filter=lfs diff=lfs merge=lfs -text
