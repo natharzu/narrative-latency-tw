@@ -210,6 +210,47 @@ def attach_request_volume(df):
           f"max={df['request_count'].max():,}")
     return df
 
+def attach_affect(df):
+    """Merge LLM affect scores (valence + composite intensity) as Cox covariates.
+
+    Affect is pre-specified as TWO axes (see the Notion cross-validation page):
+        * valence   — direction, kept as-is (-2..+2)
+        * intensity — composite = mean(arousal, urgency, threat, anger)
+
+    Reads data/processed/cofacts_affect.csv (articleId + 'valence' and either an
+    'intensity' column or the four raw scales). Skips cleanly until the corpus is
+    annotated, exactly like attach_request_volume.
+
+    Caveats (Notion 'Smoke tests' + 'Gold-cohort' pages): LLM affect is an
+    automatic proxy; arousal vs urgency point opposite ways; affect compression
+    (central-tendency bias) attenuates the coefficient; and low-affect URL-only
+    rumors are auto-matched fastest, so guard the duplicate/reply-reuse confound.
+    """
+    aff_path = PROC / "cofacts_affect.csv"
+    if not aff_path.exists():
+        print(f"skip affect: {aff_path.name} not found "
+              "(annotate valence/intensity for the corpus first)")
+        return df
+    aff = pd.read_csv(aff_path)
+    if "intensity" not in aff.columns:
+        scales = ["arousal", "urgency", "threat", "anger"]
+        have = [c for c in scales if c in aff.columns]
+        if not have:
+            print(f"skip affect: no 'intensity' and none of {scales} "
+                  f"in {aff_path.name}")
+            return df
+        aff["intensity"] = aff[have].mean(axis=1)
+    keep = [c for c in ["articleId", "valence", "intensity"] if c in aff.columns]
+    if "valence" not in keep:
+        print(f"skip affect: no 'valence' column in {aff_path.name}")
+        return df
+    df = df.merge(aff[keep], on="articleId", how="left")
+    n = df["valence"].notna().sum()
+    print(f"attached affect: {n:,}/{len(df):,} rows scored "
+          f"(valence median={df['valence'].median():.2f}, "
+          f"intensity median={df['intensity'].median():.2f})")
+    return df
+
 def main():
     articles, article_replies, replies = load_raw()
     print(f"  NORMAL TEXT articles: {len(articles):,}")
