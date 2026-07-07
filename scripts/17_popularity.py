@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-scripts/06_popularity.py — reply-request & view popularity layer.
+scripts/17_popularity.py — reply-request & view popularity layer.
 
 Builds a per-article popularity table from the RAW Cofacts open-data tables the
 latency pipeline never loads (reply_requests, analytics), joins them onto the
@@ -8,9 +8,9 @@ processed latency/topic rows by articleId, and reports popularity by narrative.
 Optionally re-fits the Cox model with request volume as a covariate.
 
 Usage:
-    uv run python scripts/06_popularity.py                 # build + attach + summarise
-    uv run python scripts/06_popularity.py --cox           # also fit the Cox model
-    uv run python scripts/06_popularity.py --raw data/raw/cofacts
+    uv run python scripts/17_popularity.py                 # build + attach + summarise
+    uv run python scripts/17_popularity.py --cox           # also fit the Cox model
+    uv run python scripts/17_popularity.py --raw data/raw/cofacts
 
 Outputs:
     data/processed/cofacts_popularity.csv
@@ -29,9 +29,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parent.parent
-RAW_DEFAULT = ROOT / "data" / "raw" / "cofacts"
-PROC = ROOT / "data" / "processed"
+# Shared repo constants via the scripts/utils.py shim (bootstraps src/ onto
+# sys.path and re-exports narrative_latency.*), matching 09_electoral_timing.py.
+from utils import ROOT, RAW, PROC
+
+RAW_DEFAULT = RAW / "cofacts"
 LATENCY_TOPIC = PROC / "cofacts_latency_topic.csv"
 POP_OUT = PROC / "cofacts_popularity.csv"
 JOINED_OUT = PROC / "cofacts_latency_topic_pop.csv"
