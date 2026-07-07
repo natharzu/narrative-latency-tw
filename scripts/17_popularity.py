@@ -88,9 +88,21 @@ def popularity_by_narrative(d: pd.DataFrame, topic_col: str) -> pd.DataFrame:
 # --------------------------------------------------------------------------- #
 # IO wrappers
 # --------------------------------------------------------------------------- #
+def _read_raw(raw: Path, name: str) -> pd.DataFrame:
+    """Read <name>.csv.zip (repo convention, cf. 10_survival.py) or <name>.csv."""
+    for fn in (f"{name}.csv.zip", f"{name}.csv"):
+        p = raw / fn
+        if p.exists():
+            return pd.read_csv(p)
+    raise FileNotFoundError(
+        f"neither {name}.csv.zip nor {name}.csv in {raw} — download the "
+        "Cofacts reply_requests / analytics open-data dumps first."
+    )
+
+
 def build_popularity_table(raw: Path) -> pd.DataFrame:
-    rr = pd.read_csv(raw / "reply_requests.csv")
-    an = pd.read_csv(raw / "analytics.csv")
+    rr = _read_raw(raw, "reply_requests")
+    an = _read_raw(raw, "analytics")
     pop = merge_popularity(build_request_counts(rr), build_view_counts(an))
     PROC.mkdir(parents=True, exist_ok=True)
     pop.to_csv(POP_OUT, index=False, encoding="utf-8")
