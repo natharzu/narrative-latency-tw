@@ -27,6 +27,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+import numpy as np
 import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
@@ -162,6 +163,8 @@ def run_cox(df, dur, evt, label):
     model = df[[dur, evt]].copy()
     model["year_c"] = df["year"] - df["year"].mean()
     model["election_window"] = df["election_window"].astype(int)
+    if "log_requests" in df.columns:        
+        model["log_requests"] = df["log_requests"].values
 
     dummies = pd.get_dummies(df["topic_cluster"], prefix="topic").astype(float)
     if "topic_Other" in dummies.columns:
@@ -186,6 +189,26 @@ def run_cox(df, dur, evt, label):
         print(f"[{label}] PH test skipped: {e}")
     return cph
 
+def attach_request_volume(df):
+    """Merge reply-request volume (from 17_popularity.py) as a Cox covariate.
+
+    Endogeneity note: request_count accrues only until an article's FIRST reply,
+    so it is partly an OUTCOME of fast replies. Read the HR as descriptive; for a
+    cleaner causal estimate, swap in an early-window request count (requests in
+    the first N hours) built in 17_popularity.py.
+    """
+    pop_path = PROC / "cofacts_popularity.csv"
+    if not pop_path.exists():
+        print(f"skip request volume: {pop_path.name} not found "
+              "(run scripts/17_popularity.py first)")
+        return df
+    pop = pd.read_csv(pop_path)[["articleId", "request_count"]]
+    df = df.merge(pop, on="articleId", how="left")
+    df["request_count"] = df["request_count"].fillna(1).astype(int)
+    df["log_requests"] = np.log1p(df["request_count"])
+    print(f"attached request volume: median={df['request_count'].median():.0f}, "
+          f"max={df['request_count'].max():,}")
+    return df
 
 def main():
     articles, article_replies, replies = load_raw()
@@ -196,6 +219,7 @@ def main():
         snapshot=SNAPSHOT, substantive_types=SUBSTANTIVE_TYPES,
     )
     df = add_strata(df)
+    df = attach_request_volume(df) 
     print(f"Survival frame: {len(df):,} articles")
     print(f"  any-reply events:         {df['event_any'].sum():,} "
           f"({df['event_any'].mean():.1%}); censored "
