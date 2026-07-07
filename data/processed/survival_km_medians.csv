@@ -1,0 +1,11 @@
+defn,stratum,n,events,median_h,ci_low_h,ci_high_h
+any,overall,200829,68536,inf,inf,inf
+any,2020 window,6098,5798,7.7446425,7.153754444444444,8.386942777777778
+any,2024 window,15900,2191,inf,inf,inf
+any,election window,21998,7989,inf,inf,inf
+any,baseline,178831,60547,inf,inf,inf
+substantive,overall,200829,49330,inf,inf,inf
+substantive,2020 window,6098,4271,20.12154,17.780597222222223,22.83818388888889
+substantive,2024 window,15900,1840,inf,inf,inf
+substantive,election window,21998,6111,inf,inf,inf
+substantive,baseline,178831,43219,inf,inf,inf
