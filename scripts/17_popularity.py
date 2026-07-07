@@ -44,7 +44,13 @@ JOINED_OUT = PROC / "cofacts_latency_topic_pop.csv"
 # --------------------------------------------------------------------------- #
 def build_request_counts(rr: pd.DataFrame) -> pd.DataFrame:
     """Distinct askers per article from a reply_requests frame."""
-    rr = rr[rr["status"].astype(str).str.upper() == "NORMAL"]
+    rr = rr[rr["status"].astype(str).str.upper() == "NORMAL"].copy()
+    # Force NumPy-backed dtypes. pandas' default PyArrow-backed strings send
+    # groupby nunique/min/max down a pure-python fallback that is orders of
+    # magnitude slower on a multi-million-row table (it looks like a hang).
+    rr["articleId"] = rr["articleId"].astype("object")
+    rr["userIdsha256"] = rr["userIdsha256"].astype("object")
+    rr["createdAt"] = pd.to_datetime(rr["createdAt"], errors="coerce", utc=True)
     return (rr.groupby("articleId")
               .agg(request_count=("userIdsha256", "nunique"),
                    first_request=("createdAt", "min"),
@@ -54,7 +60,10 @@ def build_request_counts(rr: pd.DataFrame) -> pd.DataFrame:
 
 def build_view_counts(an: pd.DataFrame) -> pd.DataFrame:
     """Lifetime visit/user totals per article from an analytics frame."""
-    an = an[an["type"] == "article"]
+    an = an[an["type"].astype(str) == "article"].copy()
+    an["docId"] = an["docId"].astype("object")
+    for _c in ["lineVisit", "lineUser", "webVisit", "webUser"]:
+        an[_c] = pd.to_numeric(an[_c], errors="coerce").fillna(0)
     return (an.groupby("docId")
               .agg(line_visits=("lineVisit", "sum"),
                    line_users=("lineUser", "sum"),
